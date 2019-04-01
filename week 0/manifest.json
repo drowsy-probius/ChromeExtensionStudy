@@ -1,0 +1,20 @@
+{
+    "manifest_version": 2,
+    "name": "Branch Breaker",
+    "version": "0.0.1",
+
+    "description": "anchor disabler for namu.wiki",
+
+    "background": {
+    },
+
+    "content_scripts": [
+            {
+            "matches": ["https://namu.wiki/*"],
+            "js": ["contentScript.js"],
+            "start_at": "document_end"
+            }
+        ],
+
+    "web_accessible_resources": ["contentScript.js"]
+}
