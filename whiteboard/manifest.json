@@ -1,0 +1,27 @@
+{
+    "manifest_version": 2,
+    "name": "Whiteboard",
+    "version": "0.0.1",
+
+    "description": "Blackboard alert",
+
+    "background": {
+        "scripts": ["js/back/getinfo.js", "js/back/auth.js", "js/back/init.js", "js/back/background.js"],
+        "persistent": false
+    },
+
+    "browser_action": {
+        "default_popup": "popup.html"
+    },
+
+    "permissions": [
+        "storage",
+        "cookies",
+        "webNavigation",
+        "tabs",
+        "notifications",
+        "activeTab",
+        "https://*.korea.ac.kr/*",
+        "http://*.korea.ac.kr/*"
+    ]
+}
