@@ -1,3 +1,7 @@
+let userid = '';
+let courseMetaData = []; // [{course id, course name, material id, assignment id}, ] 저장 
+let courseData = []; // [ {id: content}, ] 저장
+
 chrome.runtime.onMessage.addListener(
     function(request, sender, sendResponse) {
       console.log(sender.tab ?

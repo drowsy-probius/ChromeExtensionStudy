@@ -13,22 +13,22 @@ function init(id, pw){ // 매 학기 시작마다 실행(3월, 8월)
             return _promiseGetUserId(responseText);         // user id 처리, 가져오기
         })
         .then(function(userid){  // 현재 course id목록 가져올 주소 접근
+            console.log(userid);
             const mycoursesURL = "https://kulms.korea.ac.kr/learn/api/public/v1/users/" + userid + "/courses";
             return _promiseURLGET(mycoursesURL);
         })
         .then(function(responseText){
             return _promiseGetCourseIds(responseText);  // course id 불러옴.
         })
-        .then(function(cids){   // SetCourseName && SetCourseContents
-            return Promise.all(_MakePromiseArrayAPI(cids));    // [{cId, name, contents:[{}]}]
-        })
-        .then(function(cids){   // SetCourseContents
-            return Promise.all(_MakePromiseArrayBB(cids));
-        })
-        .then(function(cids){
+        .then(function(cids){ 
             console.log(cids);
+
+
+//            return _promiseSetCourseNames(cids);
+        })
+        .then(function(data){
+            console.log(data);
             console.log(courseMetaData);
-            console.log(courseData);
         })
         .catch(console.log.bind(console));
     
@@ -38,54 +38,32 @@ function refresh(id, pw){   // 평소에 실행
 
 }
 
-let _promiseURLGET = function get(url) {
-    return new Promise(function (resolve, reject) {
+let  _promiseURLGET = function get(url){
+    return new Promise(function(resolve, reject) {
         request.open("GET", url);
-        request.onload = function () {
-            if (request.status == 200) {
+        request.onload = function()
+        {
+            if (request.status == 200)
+            {
                 resolve(request.responseText);
-            } else {
+            }else
+            {
                 reject(Error(request.statusText))
             }
         }
-        request.onerror = function () {
+        request.onerror = function()
+        {
             reject(Error("Network Error"));
         }
         request.send();
     });
 }
 
-let _promiseURLGETnewRequest = function get(request, url) {
-    return new Promise(function (resolve, reject) {
-        request.open("GET", url);
-        request.onload = function () {
-            if (request.status == 200) {
-                resolve(request.responseText);
-            } else {
-                reject(Error(request.statusText))
-            }
-        }
-        request.onerror = function () {
-            reject(Error("Network Error"));
-        }
-        request.send();
-    });
-}
-
-let _promiseSearchCID = function searchCID(key) {
-    return new Promise((resolve, reject) => {
+let _promiseSearchCID = function searchCID(key){
+    return new Promise((resolve,reject)=>{
         courseMetaData.forEach(element => {
-            if (element.courseId == key) resolve(element);
+            if(element.courseId == key) resolve(element);
         });
         reject(Error("No matches"))
-    })
-}
-
-let _promiseSearchID = function searchID(key){
-    return new Promise((resolve, reject) => {
-        courseData.forEach(element => {
-            if(element.id == key) resolve(element);
-        });
-        reject(Error("No matches"));
     })
 }

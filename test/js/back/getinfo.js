@@ -9,23 +9,16 @@
 
     // 웹 접근 https://developer.chrome.com/extensions/xhr
 
-
-
-
 let _promiseGetUserId = function getUserId(responseText) {
     return new Promise((resolve, reject) => {
-
-        let userid = JSON.parse(responseText).results[0].id;
-
+        userid = JSON.parse(responseText).results[0].id;
         resolve(userid);
     });
 }
 
-
-let _promiseGetCourses = function getCourses(responseText){ // 현재 course id들의 array 리턴
+let _promiseGetCourseIds = function getCourses(responseText){ // 현재 course id들의 array 리턴
     return new Promise( (resolve, reject) => {
-        
-        let courses = [];
+        let cids = [];
         let nowY = new Date().getFullYear();
         let nowM = new Date().getMonth();
         let term;
@@ -39,32 +32,46 @@ let _promiseGetCourses = function getCourses(responseText){ // 현재 course id�
             let YYYY = time[0] * 1;
             let MM = time[1] * 1;
             let avail = e.availability.available;
-            let _cid = e.courseId;
 
-            if (avail == "Yes" && YYYY == nowY && MM >= term) {
-                courses.push({ "coursdId": _cid });
+            if (avail == "Yes" && YYYY == nowY && MM >= term) {     // user에게 등록된 course중에서
+                cids.push(e.courseId);                              // 현재 연도, 현재 학기에 속한 것만 선택함.
             }
 
         });
 
-        if(!courses) reject(Error("No courses!"));
-        resolve(courses);
+        if(!cids) reject(Error("No courses!"));
+        resolve(cids);
 
     });   
 }
 
-let _promiseGetContents = function getContents(courses){   //courseids는 현재 course의 id들. course의 material id나 assignment id얻을 것임.
-    return new Promise( (resolve, reject) => {
-        let urls = [];
 
-        courses.forEach(cid => {
-            urls.push("https://kulms.korea.ac.kr/learn/api/public/v1/courses/" + cid.courseId + "/contents");
-        });
-
-        _promiseURLGET()
-
+let _promiseSetCourseContents = function getCourseContents(responseText, key){      // assignment id하고 material id 가져오는 코드
+    return new Promise((resolve, reject) => {
 
         
-    });
+        // To Do
+        _promiseSearchCID(key)
+            .then(function(object){
+                let tmp = JSON.parse(responseText).results;
+                let _contents = [];
+
+                for (let i = 0; i < tmp.length; i++) {
+                    _contents.push({ "title": tmp[i].title, "id": tmp[i].id });
+                }
+
+                object.contents = _contents;
+            })
+        // To Do
+    })
 }
 
+let _promiseSetCourseNames = function getCourseNames(responseText){           // course name 가져오는 코드
+    return new Promise((resolve, reject) => {
+        console.log(responseText);
+        tmp = JSON.parse(responseText)
+        courseMetaData.push({ "courseId": tmp.id, "name": tmp.name });
+
+        resolve("OK");
+    })
+}

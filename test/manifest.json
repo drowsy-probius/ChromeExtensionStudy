@@ -1,20 +1,27 @@
 {
     "manifest_version": 2,
-    "name": "koreapas pc deptalk",
+    "name": "testste",
     "version": "0.0.1",
 
-    "description": "",
+    "description": "sttesst",
 
     "background": {
+        "scripts": ["js/back/background.js"],
+        "persistent": false
     },
 
-    "content_scripts": [
-            {
-            "matches": ["https://koreapas.com/*"],
-            "js": ["contentScript.js"],
-            "start_at": "document_end"
-            }
-        ],
+    "browser_action": {
+        "default_popup": "popup.html"
+    },
 
-    "web_accessible_resources": ["contentScript.js"]
+    "permissions": [
+        "storage",
+        "cookies",
+        "webNavigation",
+        "tabs",
+        "notifications",
+        "activeTab",
+        "https://*.korea.ac.kr/*",
+        "http://*.korea.ac.kr/*"
+    ]
 }
