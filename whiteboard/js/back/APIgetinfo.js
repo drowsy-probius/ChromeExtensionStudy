@@ -34,8 +34,8 @@ let _promiseGetCourseIds = function getCourses(responseText){ // 현재 course i
             let MM = time[1] * 1;
             let avail = e.availability.available;
 
-            if (avail == "Yes" && YYYY == nowY && MM >= term) {     // user에게 등록된 course중에서
-                cids.push(e.courseId);                              // 현재 연도, 현재 학기에 속한 것만 선택함.
+            if (avail == "Yes" && YYYY == nowY && MM >= term) {     // user에게 등록된 course중에서 현재 연도, 현재 학기에 속한 것만 선택함.
+                cids.push(e.courseId);
             }
 
         });

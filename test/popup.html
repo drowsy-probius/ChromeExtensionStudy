@@ -1,25 +1,86 @@
 <!DOCTYPE html>
 <html>
-   <head>
-     <style>
-       button {
-         height: 30px;
-         width: 30px;
-         outline: none;
-       }
-    </style>
-   </head>
-   <body>
-    <p id='init'>
-        <input type='text' id='id' value='2018320138' name='id'></input>
-        <input type='password' id='pw' value='(ksh4862)' name='pw'></input>
-        <div id='message'>Please use your student id(numbers)</div>
-        <br>
-        <br>
-        <input type='button' id='submit' value='submit'></input>
-    </p>
-    <br>
-   </body>
 
-   <script src="js/front/popup.js"> </script>
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" type="text/css" href="popup.css">
+</head>
+
+<body>
+  <div class="container">
+
+    <ul class="tabs">
+      <li class="tab-link current" data-tab="tab-1">메뉴_하나</li>
+      <li class="tab-link" data-tab="tab-2">메뉴_둘</li>
+      <li class="tab-link" data-tab="tab-3">메뉴_셋</li>
+    </ul>
+
+    <div id="tab-1" class="tab-content current">
+        <ul class="tabs">
+            <li class="tab-link current" data-tab="tab-11">메뉴_하나</li>
+            <li class="tab-link" data-tab="tab-12">메뉴_둘</li>
+            <li class="tab-link" data-tab="tab-13">메뉴_셋</li>
+          </ul>
+          <div id="tab-11" class="tab-content current">
+              ---- ---- -------- ---- ---- ---- ---- ---- ---- -------- ---- ---- ---- ---- ---- ---- -------- ---- ---- ----
+              ---- ---- ---- -------- ---- ---- ---- ---- ---- ---- -------- ---- ---- ---- ---- ---- ---- -------- ---- ----
+              ---- ----
+          </div>
+          <div id="tab-12" class="tab-content">
+              ---- ---- ★------ ---- ---- ---- ---- ---- ---- -------- ---- ---- ---- ---- ---- ---- -------- ---- ---- ---- ★--
+              ---- ---- ------★ ---- ---- ---- ---- ---- ---- -------- ---- ---- ---- ---- ---- ---- ★------ ---- ---- ---- ----
+          </div>
+          <div id="tab-13" class="tab-content">
+              ---- ★-- -------- ---- ---- ---- -★- ---- ---- -------- ---- -★- ---- ---- ---- ---- -------- ---- ---- ---- ----
+              ---- --★ -------- ★-- ---- ---- ---- ---- ---- -------- ---- ---- --★ ---- ---- ---- -------- ---- ---- ---- --★
+          </div>
+    </div>
+    <div id="tab-2" class="tab-content">
+        <ul class="tabs">
+            <li class="tab-link current" data-tab="tab-21">메뉴_하나</li>
+            <li class="tab-link" data-tab="tab-22">메뉴_둘</li>
+            <li class="tab-link" data-tab="tab-23">메뉴_셋</li>
+          </ul>
+          <div id="tab-21" class="tab-content">
+              ---- ---- -------- ---- ---- ---- ---- ---- ---- -------- ---- ---- ---- ---- ---- ---- -------- ---- ---- ----
+              ---- ---- ---- -------- ---- ---- ---- ---- ---- ---- -------- ---- ---- ---- ---- ---- ---- -------- ---- ----
+              ---- ----
+          </div>
+          <div id="tab-22" class="tab-content">
+              ---- ---- ★------ ---- ---- ---- ---- ---- ---- -------- ---- ---- ---- ---- ---- ---- -------- ---- ---- ---- ★--
+              ---- ---- ------★ ---- ---- ---- ---- ---- ---- -------- ---- ---- ---- ---- ---- ---- ★------ ---- ---- ---- ----
+          </div>
+          <div id="tab-23" class="tab-content">
+              ---- ★-- -------- ---- ---- ---- -★- ---- ---- -------- ---- -★- ---- ---- ---- ---- -------- ---- ---- ---- ----
+              ---- --★ -------- ★-- ---- ---- ---- ---- ---- -------- ---- ---- --★ ---- ---- ---- -------- ---- ---- ---- --★
+          </div>
+    </div>
+    <div id="tab-3" class="tab-content">
+        <ul class="tabs">
+            <li class="tab-link current" data-tab="tab-31">메뉴_하나</li>
+            <li class="tab-link" data-tab="tab-32">메뉴_둘</li>
+            <li class="tab-link" data-tab="tab-33">메뉴_셋</li>
+          </ul>
+          <div id="tab-31" class="tab-content">
+              ---- ---- -------- ---- ---- ---- ---- ---- ---- -------- ---- ---- ---- ---- ---- ---- -------- ---- ---- ----
+              ---- ---- ---- -------- ---- ---- ---- ---- ---- ---- -------- ---- ---- ---- ---- ---- ---- -------- ---- ----
+              ---- ----
+          </div>
+          <div id="tab-32" class="tab-content">
+              ---- ---- ★------ ---- ---- ---- ---- ---- ---- -------- ---- ---- ---- ---- ---- ---- -------- ---- ---- ---- ★--
+              ---- ---- ------★ ---- ---- ---- ---- ---- ---- -------- ---- ---- ---- ---- ---- ---- ★------ ---- ---- ---- ----
+          </div>
+          <div id="tab-33" class="tab-content">
+              ---- ★-- -------- ---- ---- ---- -★- ---- ---- -------- ---- -★- ---- ---- ---- ---- -------- ---- ---- ---- ----
+              ---- --★ -------- ★-- ---- ---- ---- ---- ---- -------- ---- ---- --★ ---- ---- ---- -------- ---- ---- ---- --★
+          </div>
+    </div>
+
+  </div>
+
+</body>
+
+<script src="jquery-3.4.1.min.js"> </script>
+<script src="popup.js"> </script>
+
 </html>

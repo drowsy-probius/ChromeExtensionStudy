@@ -1,20 +1,24 @@
-const request = new XMLHttpRequest();
+let request = new XMLHttpRequest();
+let userid;
+let courseMetaData; // [{course id, course name, material id, assignment id}, ] 저장 
+let courseData; // [ {id: content}, ] 저장
 
 function init(id, pw){ // 매 학기 시작마다 실행(3월, 8월)
 
-    const authURL = "https://auth.korea.ac.kr/directLoginNew.jsp?id=" + id + "&pw=" + pw + "&returnURL=kulms.korea.ac.kr";
-    const myinfoURL = "https://kulms.korea.ac.kr/learn/api/public/v1/users?userName=" + id;
+    userid='';
+    courseMetaData=[];
+    courseData=[];
 
-    _promiseURLGET(authURL) // 로그인
-        .then(function(responseText){    
-            return _promiseURLGET(myinfoURL);   // user id 가져올 주소 접근
+    return _promiseURLGET("https://auth.korea.ac.kr/directLoginNew.jsp?id=" + id + "&pw=" + pw + "&returnURL=kulms.korea.ac.kr") // 로그인
+        .then(function(responseText){    // user id 가져올 주소 접근
+            return _promiseURLGET("https://kulms.korea.ac.kr/learn/api/public/v1/users?userName=" + id);
         })
         .then(function(responseText){    
             return _promiseGetUserId(responseText);         // user id 처리, 가져오기
         })
-        .then(function(userid){  // 현재 course id목록 가져올 주소 접근
-            const mycoursesURL = "https://kulms.korea.ac.kr/learn/api/public/v1/users/" + userid + "/courses";
-            return _promiseURLGET(mycoursesURL);
+        .then(function(_userid){  // 현재 course id목록 가져올 주소 접근
+            userid = _userid;
+            return _promiseURLGET("https://kulms.korea.ac.kr/learn/api/public/v1/users/" + userid + "/courses");
         })
         .then(function(responseText){
             return _promiseGetCourseIds(responseText);  // course id 불러옴.
@@ -25,16 +29,62 @@ function init(id, pw){ // 매 학기 시작마다 실행(3월, 8월)
         .then(function(cids){   // SetCourseContents
             return Promise.all(_MakePromiseArrayBB(cids));
         })
-        .then(function(cids){
-            console.log(cids);
-            console.log(courseMetaData);
-            console.log(courseData);
+        .then(function(cids){   // course content's ids
+            // console.log(courseData);
+            // console.log(courseMetaData);
+            return Promise.all([
+                new Promise((resolve, reject) => {chrome.storage.local.set({"id": id}); resolve("OK"); }),
+                new Promise((resolve, reject) => {chrome.storage.local.set({"pw": pw}); resolve("OK"); }),
+                new Promise((resolve, reject) => {chrome.storage.local.set({"userid": userid}); resolve("OK"); }),
+                new Promise((resolve, reject) => {chrome.storage.local.set({"courseMetaData": courseMetaData}); resolve("OK"); }),
+                new Promise((resolve, reject) => {chrome.storage.local.set({"courseData": courseData}); resolve("OK"); })
+            ])
         })
         .catch(console.log.bind(console));
     
 }
 
-function refresh(id, pw){   // 평소에 실행
+function refresh(){   // 평소에 실행
+    let id='', pw = '';
+    userid = ''
+    courseMetaData = [];
+    courseData = [];
+
+    return Promise.all([
+        new Promise((resolve, reject)=>{chrome.storage.local.get("id", (result)=>{id=result.id; resolve("OK");});}),
+        new Promise((resolve, reject)=>{chrome.storage.local.get("pw", (result)=>{pw=result.key; resolve("OK");});}),
+        new Promise((resolve, reject)=>{chrome.storage.local.get("userid", (result)=>{userid=result.userid; resolve("OK");});}),
+        new Promise((resolve, reject)=>{chrome.storage.local.get("courseMetaData", (result)=>{courseMetaData=result.courseMetaData; resolve("OK");});}),
+        new Promise((resolve, reject)=>{chrome.storage.local.get("courseData", (result)=>{courseData=result.courseData; resolve("OK");});})
+        ])
+        .then(function(msg){
+            let authURL = "https://auth.korea.ac.kr/directLoginNew.jsp?id=" + id + "&pw=" + pw + "&returnURL=kulms.korea.ac.kr";
+            return _promiseURLGET(authURL)
+        })
+        .then(function(responseText){
+            return new Promise((resolve, reject) => {
+                let cids = [];
+                courseMetaData.forEach(e => {
+                    cids.push(e.courseId);
+                })
+                resolve(cids);
+            })
+        })
+        .then(function(cids){   // SetCourseContents
+            return Promise.all(_MakePromiseArrayBB(cids));
+        })
+        .then(function(cids){   // course content's ids
+            // console.log(courseData);
+            // console.log(courseMetaData);
+            return Promise.all([
+                new Promise((resolve, reject) => {chrome.storage.local.set({"id": id}); resolve("OK"); }),
+                new Promise((resolve, reject) => {chrome.storage.local.set({"pw": pw}); resolve("OK"); }),
+                new Promise((resolve, reject) => {chrome.storage.local.set({"userid": userid}); resolve("OK"); }),
+                new Promise((resolve, reject) => {chrome.storage.local.set({"courseMetaData": courseMetaData}); resolve("OK"); }),
+                new Promise((resolve, reject) => {chrome.storage.local.set({"courseData": courseData}); resolve("OK"); })
+            ])
+        })
+        .catch(console.log.bind(console));
 
 }
 

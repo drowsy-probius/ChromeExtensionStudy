@@ -16,11 +16,7 @@
 
     "permissions": [
         "storage",
-        "cookies",
-        "webNavigation",
-        "tabs",
         "notifications",
-        "activeTab",
         "https://*.korea.ac.kr/*",
         "http://*.korea.ac.kr/*"
     ]
