@@ -8,8 +8,6 @@ body{
     margin: 0 auto;
   }
    
-   
-   
   .tabs{
     margin: 0px;
     padding: 0px;
@@ -23,35 +21,35 @@ body{
     cursor: pointer;
   }
    
-  .tabs li.current{
+  .tab-link.current{
     background: #ededed;
     color: #222;
   }
    
-  .tab-content{
+  .tab-container{
     display: none;
-    background: #ededed;
     padding: 15px;
   }
    
-  .tab-content.current{
+  .tab-container.current{
     display: inherit;
+    background: #ededed;
   }
 
-  .tabintabs{
-    margin: 0px;
-    padding: 0px;
-    list-style: none;
+  .content-link.current{
+      background: #c9c9c9;
   }
-  .tabintabs li{
-    background: none;
-    color: #222;
-    display: inline-block;
-    padding: 10px 15px;
-    cursor: pointer;
+
+  .content{
+    display: none;
+    padding: 15px;
   }
-  .tabintabs li.current{
-    background: #ededed;
-    color: #222;
+   
+  .content.current{
+    display: inherit;
+    background: #c9c9c9;
   }
+
+
+
 

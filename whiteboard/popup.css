@@ -1,20 +1,21 @@
 body{
     margin-top: 10px;
-    font-family: 'Trebuchet MS', serif;
     line-height: 1.6
   }
   .container{
     width: 500px;
     margin: 0 auto;
   }
-
-
-ul.tabs{
+   
+  .tabs{
+    text-overflow: ellipsis;
     margin: 0px;
     padding: 0px;
     list-style: none;
   }
-  ul.tabs li{
+  .tabs li{
+    text-overflow: ellipsis;
+    display: inline-block;
     background: none;
     color: #222;
     display: inline-block;
@@ -22,19 +23,43 @@ ul.tabs{
     cursor: pointer;
   }
    
-  ul.tabs li.current{
+  .tab-link.current{
+    text-overflow: ellipsis;
     background: #ededed;
     color: #222;
   }
    
-  .tab-content{
+  .tab-container{
     display: none;
-    background: #ededed;
     padding: 15px;
   }
    
-  .tab-content.current{
+  .tab-container.current{
     display: inherit;
+    background: #ededed;
+  }
+
+  .content-link.current{
+      background: #c9c9c9;
+  }
+
+  .content{
+    display: none;
+    padding: 15px;
+  }
+   
+  .content.current{
+    overflow: hidden; 
+    text-overflow: ellipsis;
+    white-space: nowrap; 
+    width: 440px;
+    height: 100px;
+    display: inherit;
+    background: #c9c9c9;
+  }
+
+  .content.current div{
+    text-overflow: ellipsis;
   }
 
   div.bottom{
@@ -53,4 +78,12 @@ ul.tabs{
     margin-left: auto;
     margin-right: 10px;
     padding: 5px;
+}
+
+.text{
+  text-overflow: ellipsis;
+}
+
+.hide{
+  display: none;
 }

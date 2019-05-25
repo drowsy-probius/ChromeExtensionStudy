@@ -21,6 +21,11 @@ popup.html에는 탭처럼 구성을 하자
 
 글에 첨부사진이나 첨부파일이 있으면 되도록이면 그대로 가져오자.
 
+popup.html 저장?
+https://stackoverflow.com/questions/14888858/chrome-extension-preserve-html-data
+암호화?
+https://getsatisfaction.com/apperyio/topics/how_to_save_account_password_securely_on_local_storage
+
 
 body{
   margin-top: 100px;

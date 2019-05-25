@@ -5,7 +5,7 @@ chrome.runtime.onMessage.addListener(
                   "from the extension");
 
     console.log("submit received");
-    if(request.act == "refresh"){
+    if(request.act == "reload"){
       refresh()
       .then(function(e){
         chrome.runtime.sendMessage({isSet: "Yes"});

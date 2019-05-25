@@ -24,7 +24,7 @@ function init(id, pw){ // 매 학기 시작마다 실행(3월, 8월)
             return _promiseGetCourseIds(responseText);  // course id 불러옴.
         })
         .then(function(cids){   // SetCourseName && SetCourseContents
-            return Promise.all(_MakePromiseArrayAPI(cids));    // [{cId, name, contents:[{}]}]
+            return Promise.all(_MakePromiseArrayAPI(cids));    // [{courseId, name, contents:[{}]}]
         })
         .then(function(cids){   // SetCourseContents
             return Promise.all(_MakePromiseArrayBB(cids));
