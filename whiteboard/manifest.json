@@ -6,7 +6,7 @@
     "description": "Blackboard alert",
 
     "background": {
-        "scripts": ["js/back/APIgetinfo.js", "js/back/BBgetinfo.js", "js/back/init.js", "js/back/background.js"],
+        "scripts": ["js/jquery-3.4.1.min.js", "js/back/APIgetinfo.js", "js/back/BBgetinfo.js", "js/back/init.js", "js/back/background.js"],
         "persistent": false
     },
 

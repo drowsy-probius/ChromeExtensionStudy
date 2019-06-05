@@ -5,20 +5,23 @@ chrome.runtime.onMessage.addListener(
                   "from the extension");
 
     console.log("submit received");
-    if(request.act == "reload"){
+    if(request.act === "reload"){
       refresh()
       .then(function(e){
-        chrome.runtime.sendMessage({isSet: "Yes"});
+        chrome.runtime.sendMessage({isSet: "Yes"})
       })
+      .catch(console.log.bind(console))
+      sendResponse({ farewell: "goodbye" });
     }else{
-      let [id, pw] = request.user;
-      init(id, pw)
+      let [id, pw, stdId] = request.user;
+      init(id, pw, stdId)
       .then(function(e){
-        chrome.runtime.sendMessage({isSet: "Yes"});
+        chrome.runtime.sendMessage({isSet: "Yes"})
       })
+      .catch(console.log.bind(console))
+      sendResponse({ farewell: "goodbye" });
     }
 
-    sendResponse({ farewell: "goodbye" });
-    // return true;
+    
   }
 );

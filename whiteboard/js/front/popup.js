@@ -1,44 +1,37 @@
-$('#login').click(function(){
-    let id = $('#id').attr('value');
-    let pw = $('#pw').attr('value');
+$('#login').click(function () {
+    let id = $('#id').val();
+    let stdId = $('#stdId').val();
+    let pw = $('#pw').val();
 
-    if(isNaN(id))
-    {
-        $('#message').text = "포탈 아이디 말고 학번 로그인을 해주세요.";
-    }else
-    {
-        $('#message').text = "";
-        chrome.runtime.sendMessage({user: [id, pw]}, function(response){
-            console.log(response.farewell);
-        })
-    }
+    chrome.runtime.sendMessage({ user: [id, pw, stdId] }, function (response) {
+        console.log(response.farewell);
+    })
+
 });
 
-$('reload').click(function () {
+$('#reload').click(function () {
     chrome.runtime.sendMessage({ act: "reload" }, function (response) {
         console.log(response.farewell);
     })
 })
 
 chrome.runtime.onMessage.addListener(
-    function(request, sender, sendResponse) {
-      console.log(sender.tab ?
-                  "from a content script:" + sender.tab.url :
-                  "from the extension");
+    function (request, sender, sendResponse) {
+        console.log(sender.tab ?
+            "from a content script:" + sender.tab.url :
+            "from the extension");
 
-    console.log("submit received");
+        console.log("submit received");
 
-    if(request.isSet == "Yes"){
-        _promiseSetData()
+        if (request.isSet == "Yes") {
+            _promiseSetData()
+        }
+        return true;
     }
-
-  }
 );
 
 let _promiseSetData = function () {
-
     let _courseData = [];
-    let count = 0;
 
     return _promiseGetData()
         .then(function (courseData) {
@@ -53,39 +46,30 @@ let _promiseSetData = function () {
                     let course_link = $('<li></li>');
                     let content_container = $('<div></div>');
 
-                    if (!count) {
-                        course_link.attr("class", "tab-link current");
-                        content_container.attr("class", "tab-container current");
-                    } else {
-                        course_link.attr("class", "tab-link");
-                        content_container.attr("class", "tab-container");
-                    }
-                    course_link.attr("data-tab", course.courseId);
+                    course_link.attr("class", "course-link");
+                    course_link.attr("data-course", course.courseId);
                     course_link.text(course.name);
 
+                    content_container.attr("class", "content-container");
                     content_container.attr("data-container", course.courseId);
                     content_container.append($('<ul class="tabs"></ul>'));
 
-                    let contentlists = {"Announcements":course.courseId, "Grades":course.courseId+'_grade'};
+                    let contentlists = { "Announcements": course.courseId, "Grades": course.courseId + '_grade' };
                     course.contents.forEach(e => {
                         contentlists[e.title] = e.id;
                     })
 
-                    for(let title in contentlists){
+                    for (let title in contentlists) {
                         let content_link = $('<li></li>');
                         let content = $('<div></div>');
-                        if (!count) {
-                            content_link.attr("class", "content-link current");
-                            content.attr("class", "content current");
-                            count = 1;
-                        } else {
-                            content_link.attr("class", "content-link");
-                            content.attr("class", "content")
-                        }
-                        content_link.attr("data-tab", contentlists[title]);
+
+                        content_link.attr("class", "content-link");
+                        content_link.attr("data-content", contentlists[title]);
                         content_link.text(title);
 
+                        content.attr("class", "content")
                         content.attr("id", contentlists[title]);
+
 
                         let p = $('<p class="text"></p>');
                         _courseData.forEach(elem => {
@@ -108,47 +92,53 @@ let _promiseSetData = function () {
                     }
 
                     $('.container > .tabs').append(course_link);
-                    $('.container').append(content_container);
-
-
-                })
+                    course_link.after(content_container);
+                })  // coursemetadata foreach ends
                 resolve("OK");
             })
-            .then(function(){
-                $('#message').addClass('hide');
-                $('#loginform').addClass('hide');
-                $('#login').addClass('hide');
-                $('#submit').addClass('hide');
-                $('#logout').removeClass('hide');
+                .then(function () {
+                    $('#message').addClass('hide');
+                    $('#loginform').addClass('hide');
+                    $('#login').addClass('hide');
+                    $('#submit').addClass('hide');
+                    $('#logout').removeClass('hide');
 
-                $('.container > .tabs li').click(function () {
-                    var tab_id = $(this).attr('data-tab');
-            
-                    $('li').removeClass('current');
-                    $('.container > .tab-container').removeClass('current');
-            
-                    $(this).addClass('current');
-                    $("[data-container=" + tab_id + "]").addClass('current');
-                    $("[data-container=" + tab_id + "]").children('.tabs').children(':first-child').addClass('current');
-                    $("[data-container=" + tab_id + "]").children(':nth-child(2)').addClass('current');
+                    $('.course-link').click(function () {
+                        let tab_id = $(this).attr('data-course');  // 선택한 탭의 id(course id)
+                        let isCurrent = $(this).attr('class').search("current");
 
+                        $('.course-link').removeClass('current');
+                        $('.content-container').removeClass('current');
+                        $('.content-link').removeClass('current');
+                        $('.content').removeClass('current');
+
+                        if (isCurrent === -1) {
+                            $(this).addClass('current');
+                            $("[data-container=" + tab_id + "]").addClass('current');
+                        }
+
+                    })
+
+                    $('.content-link').click(function () {
+                        let content_id = $(this).attr('data-content');
+                        let isCurrent = $(this).attr('class').search("current");
+
+                        $('.content-link').removeClass('current');
+                        $('.content').removeClass('current');
+
+                        if(isCurrent === -1){
+                            $(this).addClass('current');
+                            $("#" + content_id).addClass('current');
+                        }
+                    })
+                    
                 })
-            
-                $('.tab-container > .tabs li').click(function () {
-                    var content_id = $(this).attr('data-tab');
-            
-                    $('.tab-container > .tabs li').removeClass('current');
-                    $('.tab-container > .content').removeClass('current');
-            
-                    $(this).addClass('current');
-                    $("#" + content_id).addClass('current');
-                })
-            })
+                .catch(console.log.bind(console))
         })
 
 }
 
-let _promiseGetMetaData = function(){
+let _promiseGetMetaData = function () {
     return new Promise((resolve, reject) => {
         chrome.storage.local.get("courseMetaData", (result) => {
             resolve(result.courseMetaData);
@@ -156,8 +146,8 @@ let _promiseGetMetaData = function(){
     })
 }
 
-let _promiseGetData = function(){
-    return new Promise((resolve, reject)=>{
+let _promiseGetData = function () {
+    return new Promise((resolve, reject) => {
         chrome.storage.local.get("courseData", (result) => {
             resolve(result.courseData);
         })

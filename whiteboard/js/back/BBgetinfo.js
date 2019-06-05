@@ -32,7 +32,6 @@ let _MakePromiseArrayBB = (cids) => {
                                     _promiseSetData(result2[0], result2[1])
                                 ])
                             })                      // course contents ends
-
                         );
         
         ArrayOfPromise.push(PromiseTmp);
