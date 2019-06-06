@@ -25,6 +25,7 @@ popup.html 저장?
 https://stackoverflow.com/questions/14888858/chrome-extension-preserve-html-data
 암호화?
 https://getsatisfaction.com/apperyio/topics/how_to_save_account_password_securely_on_local_storage
+https://stackoverflow.com/questions/18279141/javascript-string-encryption-and-decryption
 
 div class=container
     ul class=tabs

@@ -9,12 +9,15 @@ $('#login').click(function () {
 
 });
 
-$('#logout').click(() => {
-    console.log("logout clicked!");
-})
-
 $('#reload').click(function () {
     chrome.runtime.sendMessage({ act: "reload" }, function (response) {
+        $('.container > .tabs').html('');
+        console.log(response.farewell);
+    })
+})
+
+$('#setinterval').click(function(){
+    chrome.runtime.sendMessage({interval: $('#interval').val()}, function(response){
         console.log(response.farewell);
     })
 })
@@ -27,8 +30,12 @@ chrome.runtime.onMessage.addListener(
 
         console.log("submit received");
 
-        if (request.isSet == "Yes") {
+        if (request.isSet === "Yes") {
             _promiseSetData()
+        }
+
+        if(request.updateInfo !== undefined){
+            console.log(request.updateInfo);
         }
         return true;
     }
@@ -45,108 +52,19 @@ let _promiseSetData = function () {
         .then(function (courseMetaData) {
             console.log(courseMetaData);
             console.log(_courseData);
-            return new Promise((resolve, reject) => {
-                courseMetaData.forEach(course => {
-                    let course_link = $('<li></li>');
-                    let content_container = $('<div></div>');
-
-                    course_link.attr("class", "course-link");
-                    course_link.attr("data-course", course.courseId);
-                    course_link.text(course.name);
-
-                    content_container.attr("class", "content-container");
-                    content_container.attr("data-container", course.courseId);
-                    content_container.append($('<ul class="tabs"></ul>'));
-
-                    let contentlists = { "Announcements": course.courseId, "Grades": course.courseId + '_grade' };
-                    course.contents.forEach(e => {
-                        contentlists[e.title] = e.id;
-                    })
-
-                    for (let title in contentlists) {
-                        let content_link = $('<li></li>');
-                        let content = $('<div></div>');
-
-                        content_link.attr("class", "content-link");
-                        content_link.attr("data-content", contentlists[title]);
-                        content_link.text(title);
-
-                        content.attr("class", "content")
-                        content.attr("id", contentlists[title]);
-
-
-                        let p = $('<p class="text"></p>');
-                        _courseData.forEach(elem => {
-                            if (elem.id == contentlists[title]) {
-                                elem.contents.forEach(e => {
-                                    let d = $('<div></div>');
-                                    let h3 = $('<h3>' + e.title.trim() + '</h3>');
-                                    let h4 = $('<p>' + e.content.trim() + '</p>');
-
-                                    d.append(h3);
-                                    d.append(h4);
-                                    p.append(d);
-                                })
-                            }
-                        })
-                        content.append(p);
-
-                        content_container.children('ul').append(content_link);
-                        content_container.append(content);
-                    }
-
-                    $('.container > .tabs').append(course_link);
-                    course_link.after(content_container);
-                })  // coursemetadata foreach ends
-                resolve("OK");
+            return _promiseMakeElements(courseMetaData, _courseData)
         })
         .then(function(){
             return new Promise((resolve, reject) => {
                 let _content = $('.container > .tabs').html();
                 chrome.storage.local.set({"content": _content});
-                console.log(_content);
-                resolve("OK");    
+                resolve(_content);    
             })
         })
-        .then(function () {
-            $('#message').addClass('hide');
-            $('#loginform').addClass('hide');
-            $('#login').addClass('hide');
-            $('#submit').addClass('hide');
-            $('#logout').removeClass('hide');
-
-            $('.course-link').click(function () {
-                let tab_id = $(this).attr('data-course');  // 선택한 탭의 id(course id)
-                let isCurrent = $(this).attr('class').search("current");
-
-                $('.course-link').removeClass('current');
-                $('.content-container').removeClass('current');
-                $('.content-link').removeClass('current');
-                $('.content').removeClass('current');
-
-                if (isCurrent === -1) {
-                    $(this).addClass('current');
-                    $("[data-container=" + tab_id + "]").addClass('current');
-                }
-
-            })
-
-            $('.content-link').click(function () {
-                let content_id = $(this).attr('data-content');
-                let isCurrent = $(this).attr('class').search("current");
-
-                $('.content-link').removeClass('current');
-                $('.content').removeClass('current');
-
-                if(isCurrent === -1){
-                    $(this).addClass('current');
-                    $("#" + content_id).addClass('current');
-                }
-            })
-                    
+        .then(function(content) {
+            render(content);         
         })
         .catch(console.log.bind(console))
-        })
 
 };
 
@@ -167,24 +85,128 @@ let _promiseGetData = function () {
 };
 
 function render(_content){
+    $('.container > .tabs').html(_content);
+
     $('#message').addClass('hide');
     $('#loginform').addClass('hide');
     $('#login').addClass('hide');
     $('#submit').addClass('hide');
-    $('#logout').removeClass('hide');
 
-    $('.container > .tabs').html(_content);
+    $('.course-link').click(function () {
+        let tab_id = $(this).attr('data-course');  // 선택한 탭의 id(course id)
+        let isCurrent = $(this).attr('class').search("current");
+
+        $('.course-link').removeClass('current');
+        $('.content-container').removeClass('current');
+        $('.content-link').removeClass('current');
+        $('.content').removeClass('current');
+
+        if (isCurrent === -1) {
+            $(this).addClass('current');
+            $("[data-container=" + tab_id + "]").addClass('current');
+        }
+
+    })
+
+    $('.content-link').click(function () {
+        let content_id = $(this).attr('data-content');
+        let isCurrent = $(this).attr('class').search("current");
+
+        $('.content-link').removeClass('current');
+        $('.content').removeClass('current');
+
+        if(isCurrent === -1){
+            $(this).addClass('current');
+            $("#" + content_id).addClass('current');
+        }
+    })
+};
+
+let _promiseMakeElements = function (courseMetaData, courseData){
+    return new Promise((resolve, reject) => {
+        courseMetaData.forEach(course => {
+            let course_link = $('<li></li>');
+            let content_container = $('<div></div>');
+
+            course_link.attr("class", "course-link");
+            course_link.attr("data-course", course.courseId);
+            course_link.text(course.name);
+
+            content_container.attr("class", "content-container");
+            content_container.attr("data-container", course.courseId);
+            content_container.append($('<ul class="tabs"></ul>'));
+
+            let contentlists = { "Announcements": course.courseId, "Grades": course.courseId + '_grade' };
+            course.contents.forEach(e => {
+                contentlists[e.title] = e.id;
+            })
+
+            for (let title in contentlists) {
+                let content_link = $('<li></li>');
+                let content = $('<div></div>');
+
+                content_link.attr("class", "content-link");
+                content_link.attr("data-content", contentlists[title]);
+                content_link.text(title);
+
+                content.attr("class", "content")
+                content.attr("id", contentlists[title]);
+
+
+                let p = $('<p class="text"></p>');
+                courseData.forEach(elem => {
+                    if (elem.id == contentlists[title]) {
+                        elem.contents.forEach(e => {
+                            let d = $('<div></div>');
+                            let h3 = $('<h3>' + e.title.trim() + '</h3>');
+                            let h4 = $('<p>' + e.content.trim() + '</p>');
+
+                            d.append(h3);
+                            d.append(h4);
+                            p.append(d);
+                        })
+                    }
+                })
+                content.append(p);
+
+                content_container.children('ul').append(content_link);
+                content_container.append(content);
+            }
+
+            $('.container > .tabs').append(course_link);
+            course_link.after(content_container);
+        })
+        resolve("OK");
+    });
 };
 
 (function(){
     _promiseGetMetaData()
-    .then(function(_courseMetaData){
-        if(_courseMetaData !== undefined){
-            chrome.storage.local.get("content", (result) => {
-                if(result.content !== undefined){
-                    render(result.content);
+        .then(function(_courseMetaData){
+            if(_courseMetaData !== undefined){
+                if(!$('.container > .tabs').html().trim()){
+                    _promiseGetData()
+                    .then(function(courseData){
+                        return _promiseMakeElements(_courseMetaData, courseData);
+                    })
+                    .then(function(){
+                        return new Promise((resolve, reject) => {
+                            let _content = $('.container > .tabs').html();
+                            chrome.storage.local.set({"content": _content});
+                            resolve(_content);    
+                        })
+                    })
+                    .then(function(content) {
+                        render(content);         
+                    })
+                    .catch(console.log.bind(console))
+                }else{
+                    chrome.storage.local.get("content", (result) => {
+                        if(result.content !== undefined){
+                            render(result.content);
+                        }
+                    });
                 }
-            });
-        }
-    });
+            }
+        });
 })();

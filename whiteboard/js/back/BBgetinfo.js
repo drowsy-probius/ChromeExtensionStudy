@@ -3,26 +3,28 @@ let _MakePromiseArrayBB = (cids) => {
     for(let i = 0; i<cids.length; i++){
         let CAurl = "https://kulms.korea.ac.kr/webapps/blackboard/execute/announcement?method=search&course_id="+cids[i];
         let CGurl = "https://kulms.korea.ac.kr/webapps/bb-mygrades-BBLEARN/myGrades?course_id="+cids[i]+"&stream_name=mygrades";
-        let newrequest = new XMLHttpRequest();
-        let PromiseTmp = (_promiseURLGETnewRequest(newrequest, CAurl) // course announcements starts
+        let PromiseTmp = (_promiseURLGETnewRequest(new XMLHttpRequest(), CAurl) // course announcements starts
                             .then(function(responseText){ 
                                 return _promiseGetCourseAnnouncements(responseText)  
                             })
                             .then(function(result){
                                 return new Promise((resolve, reject) => {
-                                    courseData.push({"id":id, "contents":data, "url":CAurl});
-                                    resolve(id);
+                                    courseData.push({"id":cids[i], "contents":result, "url":CAurl});
+                                    resolve(cids[i]);
                                 })
                                 //return _promiseSetData(cids[i], result, CAurl)
                             })                      // course announcements ends
                             .then(function(id){     // course grades starts
-                                return _promiseURLGETnewRequest(newrequest, CGurl)
+                                return _promiseURLGETnewRequest(new XMLHttpRequest(), CGurl)
                             })
                             .then(function(responseText){
                                 return _promiseGetCourseGrades(responseText);
                             })
                             .then(function(result){
-                                return _promiseSetData(cids[i]+"_grade", result);
+                                return new Promise((resolve, reject) => {
+                                    courseData.push({"id":cids[i]+"_grade", "contents":result, "url":CGurl});
+                                    resolve(cids[i]);
+                                })
                             })                     // course grades ends
                             .then(function(id){    // course contents starts
                                 return _promiseGetCourseContentIDs(cids[i]);
@@ -30,36 +32,16 @@ let _MakePromiseArrayBB = (cids) => {
                             .then(function(ids){        // content id의 배열 리턴
                                 return Promise.all(_MakePromiseArrayBB_CC(cids[i], ids))
                             })
-                            .then(function([result1, result2]){        // [[result1], [result2]] 리턴
-                                return Promise.all([
-                                    _promiseSetData(result1[0], result1[1]),
-                                    _promiseSetData(result2[0], result2[1])
-                                ])
+                            .then(function(resultArray){        // [[result1], [result2]] 리턴
+                                resultArray.forEach(e => {
+                                    courseData.push({"id":e[0], "contents":e[1], "url":e[2]});
+                                })
                             })                      // course contents ends
                         );
         
         ArrayOfPromise.push(PromiseTmp);
     }
     return ArrayOfPromise;
-}
-
-let _promiseSetData = function(id, data, CAurl){
-    return ( _promiseSearchID(id)
-                .then(function(object){
-                    return new Promise((resolve, reject) => {
-                        object.contents = data;
-                        object.url = CAurl;
-                        resolve(id);
-                    })
-                })
-                .catch(function(e){
-                    return new Promise((resolve, reject) => {
-                        courseData.push({"id":id, "contents":data, "url":CAurl});
-                        resolve(id);
-                    })
-                })
-
-    )
 }
 
 let _promiseGetCourseAnnouncements = function(responseText){
@@ -126,10 +108,9 @@ let _MakePromiseArrayBB_CC = function(cid, ids){
     let ArrayOfPromise = [];
     for(let i = 0; i<ids.length; i++){
         let CCurl = "https://kulms.korea.ac.kr/webapps/blackboard/content/listContent.jsp?course_id="+cid+"&content_id="+ids[i];
-        let newrequest = new XMLHttpRequest();
-        let PromiseTmp = (_promiseURLGETnewRequest(newrequest, CCurl)
+        let PromiseTmp = (_promiseURLGETnewRequest(new XMLHttpRequest(), CCurl)
                         .then(function(responseText){
-                            return _promiseGetCourseContents(ids[i], responseText);
+                            return _promiseGetCourseContents(ids[i], responseText, CCurl);
                         })
                         );
         ArrayOfPromise.push(PromiseTmp);
@@ -137,7 +118,7 @@ let _MakePromiseArrayBB_CC = function(cid, ids){
     return ArrayOfPromise;
 }
 
-let _promiseGetCourseContents = function (id, responseText){
+let _promiseGetCourseContents = function (id, responseText, CCurl){
     return new Promise((resolve, reject) => {
         let tmp = new DOMParser().parseFromString(responseText, "text/html");
         let contents = tmp.getElementById('content_listContainer');
@@ -154,6 +135,83 @@ let _promiseGetCourseContents = function (id, responseText){
                 }
             }
         }
-        resolve([id, result]);
+        resolve([id, result, CCurl]);
     })
 }
+
+let _promiseGetCourseContents2 = function (responseText){
+    return new Promise((resolve, reject) => {
+        let tmp = new DOMParser().parseFromString(responseText, "text/html");
+        let contents = tmp.getElementById('content_listContainer');
+        let result = [];
+
+        if (contents) {
+            for (let i = 0; i < contents.children.length; i++) {
+                let title = contents.children[i].children[1].children[0].innerText;
+                let file = contents.children[i].children[2].children[0] ? contents.children[i].children[2].children[0].innerText : "";
+                let content = contents.children[i].children[2].children[1] ? contents.children[i].children[2].children[1].innerText : "";
+
+                if (title) {
+                    result.push({ "order": i, "title": title, "content": content, "file": file });
+                }
+            }
+        }
+        resolve(result);
+    })
+}
+
+let _promiseUpdateCourseData = function(_courseData){
+    let ArrayOfPromise = [];
+    _courseData.forEach(elem => {
+        let PromiseTmp = (_promiseGetNewData(elem.url)
+                        .then(function(_result){
+                            return new Promise((resolve, reject) => {
+                                let count = _result.length - elem.contents.length;
+                                if(count > 0){
+                                    elem.contents = _result;
+                                    resolve([elem.id, count]);
+                                }else{
+                                    resolve([elem.id, 0]);
+                                }
+                            })
+                        }));
+        ArrayOfPromise.push(PromiseTmp);
+    })
+    return ArrayOfPromise;
+};
+
+let _promiseGetNewData = function getNewData(url) {
+    return new Promise((resolve, reject) => {
+        switch (url.split('?')[0]) {
+            case "https://kulms.korea.ac.kr/webapps/blackboard/execute/announcement":
+                _promiseURLGETnewRequest(new XMLHttpRequest(), url)
+                    .then(function (responseText) {
+                        return _promiseGetCourseAnnouncements(responseText)
+                    })
+                    .then(function (result) {
+                        resolve(result);
+                    })
+                break;
+            case "https://kulms.korea.ac.kr/webapps/bb-mygrades-BBLEARN/myGrades":
+                _promiseURLGETnewRequest(new XMLHttpRequest(), url)
+                    .then(function (responseText) {
+                        return _promiseGetCourseGrades(responseText);
+                    })
+                    .then(function (result) {
+                        resolve(result);
+                    })
+                break;
+            case "https://kulms.korea.ac.kr/webapps/blackboard/content/listContent.jsp":
+                _promiseURLGETnewRequest(new XMLHttpRequest(), url)
+                    .then(function (responseText) {
+                        return _promiseGetCourseContents2(responseText)
+                    })
+                    .then(function (result) {
+                        resolve(result);
+                    })
+                break;
+        }
+        
+    })
+
+} 

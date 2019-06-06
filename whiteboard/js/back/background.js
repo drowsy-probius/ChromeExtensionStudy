@@ -1,3 +1,5 @@
+let autoreload = null;
+
 chrome.runtime.onMessage.addListener(
     function(request, sender, sendResponse) {
     console.log(sender.tab ?
@@ -5,23 +7,40 @@ chrome.runtime.onMessage.addListener(
                   "from the extension");
 
     console.log("submit received");
+
     if(request.act === "reload"){
       refresh()
       .then(function(e){
         chrome.runtime.sendMessage({isSet: "Yes"})
       })
       .catch(console.log.bind(console))
-      sendResponse({ farewell: "goodbye" });
-    }else{
+      sendResponse({ farewell: "reloading..." });
+    }
+
+    if(request.user !== undefined){
       let [id, pw, stdId] = request.user;
       init(id, pw, stdId)
       .then(function(e){
         chrome.runtime.sendMessage({isSet: "Yes"})
       })
+      .then(function(e){
+        autoreload = setInterval(refresh, 120 * 60 * 1000)
+      })
       .catch(console.log.bind(console))
-      sendResponse({ farewell: "goodbye" });
+      sendResponse({ farewell: "init" });
     }
 
-    
+    if(request.interval !== undefined){
+      if(request.interval*1 < 1){
+        request.interval = 1;
+        console.log(1)
+      }
+      clearInterval(autoreload);
+      autoreload = setInterval(refresh, request.interval * 60 * 1000);
+
+      sendResponse({ farewell: "time interval set" });
+    }
+
+    return true;
   }
 );

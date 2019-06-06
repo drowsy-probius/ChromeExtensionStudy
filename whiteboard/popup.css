@@ -7,6 +7,10 @@ body{
   .container{
     margin: 0 auto;
   }
+
+  input{
+    widows: 10px;
+  }
    
   .tabs{
     text-overflow: ellipsis;

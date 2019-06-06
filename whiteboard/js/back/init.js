@@ -47,38 +47,32 @@ function init(id, pw, stdId){ // 매 학기 시작마다 실행(3월, 8월)
 }
 
 function refresh(){   // 평소에 실행
-    let id='', pw = '', stdId='';
-    userid = '';
-    courseMetaData = [];
+    let id='', pw = '';
     courseData = [];
-
-    let newCourseData = [];
 
     return Promise.all([
         new Promise((resolve, reject)=>{chrome.storage.local.get("id", (result)=>{id=result.id; resolve("OK");});}),
         new Promise((resolve, reject)=>{chrome.storage.local.get("pw", (result)=>{pw=result.pw; resolve("OK");});}),
-        new Promise((resolve, reject)=>{chrome.storage.local.get("stdId", (result)=>{stdId=result.stdId; resolve("OK");});}),
-        new Promise((resolve, reject)=>{chrome.storage.local.get("userid", (result)=>{userid=result.userid; resolve("OK");});}),
-        new Promise((resolve, reject)=>{chrome.storage.local.get("courseMetaData", (result)=>{courseMetaData=result.courseMetaData; resolve("OK");});}),
         new Promise((resolve, reject)=>{chrome.storage.local.get("courseData", (result)=>{courseData=result.courseData; resolve("OK");});})
         ])
         .then(function(msg){
             return _promiseLogin(id, pw)
         })
-        .then(function(cids){   // SetCourseName && SetCourseContents
-            return Promise.all(_MakePromiseArrayAPI(cids));    // [{courseId, name, contents:[{}]}]
+        .then(function(msg){
+            return Promise.all(_promiseUpdateCourseData(courseData))
         })
-        .then(function(cids){   // SetCourseContents
-            return Promise.all(_MakePromiseArrayBB(cids));
+        .then(function(updateArray){
+            console.log(updateArray)
+            chrome.runtime.sendMessage({updateInfo: updateArray})
         })
         .catch(console.log.bind(console));
-
 }
 
 let _promiseLogin = function(id, pw){
     return new Promise((resolve, reject) => {
         $.ajax({
             url: "https://auth.korea.ac.kr/directLoginNew.jsp",
+            async: false,
             type: "POST",
             data: {
                     "id": id,
