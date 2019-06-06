@@ -9,6 +9,10 @@ $('#login').click(function () {
 
 });
 
+$('#logout').click(() => {
+    console.log("logout clicked!");
+})
+
 $('#reload').click(function () {
     chrome.runtime.sendMessage({ act: "reload" }, function (response) {
         console.log(response.farewell);
@@ -95,48 +99,56 @@ let _promiseSetData = function () {
                     course_link.after(content_container);
                 })  // coursemetadata foreach ends
                 resolve("OK");
+        })
+        .then(function(){
+            return new Promise((resolve, reject) => {
+                let _content = $('.container > .tabs').html();
+                chrome.storage.local.set({"content": _content});
+                console.log(_content);
+                resolve("OK");    
             })
-                .then(function () {
-                    $('#message').addClass('hide');
-                    $('#loginform').addClass('hide');
-                    $('#login').addClass('hide');
-                    $('#submit').addClass('hide');
-                    $('#logout').removeClass('hide');
+        })
+        .then(function () {
+            $('#message').addClass('hide');
+            $('#loginform').addClass('hide');
+            $('#login').addClass('hide');
+            $('#submit').addClass('hide');
+            $('#logout').removeClass('hide');
 
-                    $('.course-link').click(function () {
-                        let tab_id = $(this).attr('data-course');  // 선택한 탭의 id(course id)
-                        let isCurrent = $(this).attr('class').search("current");
+            $('.course-link').click(function () {
+                let tab_id = $(this).attr('data-course');  // 선택한 탭의 id(course id)
+                let isCurrent = $(this).attr('class').search("current");
 
-                        $('.course-link').removeClass('current');
-                        $('.content-container').removeClass('current');
-                        $('.content-link').removeClass('current');
-                        $('.content').removeClass('current');
+                $('.course-link').removeClass('current');
+                $('.content-container').removeClass('current');
+                $('.content-link').removeClass('current');
+                $('.content').removeClass('current');
 
-                        if (isCurrent === -1) {
-                            $(this).addClass('current');
-                            $("[data-container=" + tab_id + "]").addClass('current');
-                        }
+                if (isCurrent === -1) {
+                    $(this).addClass('current');
+                    $("[data-container=" + tab_id + "]").addClass('current');
+                }
 
-                    })
+            })
 
-                    $('.content-link').click(function () {
-                        let content_id = $(this).attr('data-content');
-                        let isCurrent = $(this).attr('class').search("current");
+            $('.content-link').click(function () {
+                let content_id = $(this).attr('data-content');
+                let isCurrent = $(this).attr('class').search("current");
 
-                        $('.content-link').removeClass('current');
-                        $('.content').removeClass('current');
+                $('.content-link').removeClass('current');
+                $('.content').removeClass('current');
 
-                        if(isCurrent === -1){
-                            $(this).addClass('current');
-                            $("#" + content_id).addClass('current');
-                        }
-                    })
+                if(isCurrent === -1){
+                    $(this).addClass('current');
+                    $("#" + content_id).addClass('current');
+                }
+            })
                     
-                })
-                .catch(console.log.bind(console))
+        })
+        .catch(console.log.bind(console))
         })
 
-}
+};
 
 let _promiseGetMetaData = function () {
     return new Promise((resolve, reject) => {
@@ -144,7 +156,7 @@ let _promiseGetMetaData = function () {
             resolve(result.courseMetaData);
         });
     })
-}
+};
 
 let _promiseGetData = function () {
     return new Promise((resolve, reject) => {
@@ -152,4 +164,27 @@ let _promiseGetData = function () {
             resolve(result.courseData);
         })
     })
-}
+};
+
+function render(_content){
+    $('#message').addClass('hide');
+    $('#loginform').addClass('hide');
+    $('#login').addClass('hide');
+    $('#submit').addClass('hide');
+    $('#logout').removeClass('hide');
+
+    $('.container > .tabs').html(_content);
+};
+
+(function(){
+    _promiseGetMetaData()
+    .then(function(_courseMetaData){
+        if(_courseMetaData !== undefined){
+            chrome.storage.local.get("content", (result) => {
+                if(result.content !== undefined){
+                    render(result.content);
+                }
+            });
+        }
+    });
+})();

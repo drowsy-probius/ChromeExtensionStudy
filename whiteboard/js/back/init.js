@@ -52,6 +52,8 @@ function refresh(){   // 평소에 실행
     courseMetaData = [];
     courseData = [];
 
+    let newCourseData = [];
+
     return Promise.all([
         new Promise((resolve, reject)=>{chrome.storage.local.get("id", (result)=>{id=result.id; resolve("OK");});}),
         new Promise((resolve, reject)=>{chrome.storage.local.get("pw", (result)=>{pw=result.pw; resolve("OK");});}),

@@ -8,8 +8,12 @@ let _MakePromiseArrayBB = (cids) => {
                             .then(function(responseText){ 
                                 return _promiseGetCourseAnnouncements(responseText)  
                             })
-                            .then(function(result){     
-                                return _promiseSetData(cids[i], result)
+                            .then(function(result){
+                                return new Promise((resolve, reject) => {
+                                    courseData.push({"id":id, "contents":data, "url":CAurl});
+                                    resolve(id);
+                                })
+                                //return _promiseSetData(cids[i], result, CAurl)
                             })                      // course announcements ends
                             .then(function(id){     // course grades starts
                                 return _promiseURLGETnewRequest(newrequest, CGurl)
@@ -39,17 +43,18 @@ let _MakePromiseArrayBB = (cids) => {
     return ArrayOfPromise;
 }
 
-let _promiseSetData = function(id, data){
+let _promiseSetData = function(id, data, CAurl){
     return ( _promiseSearchID(id)
                 .then(function(object){
                     return new Promise((resolve, reject) => {
                         object.contents = data;
+                        object.url = CAurl;
                         resolve(id);
                     })
                 })
                 .catch(function(e){
                     return new Promise((resolve, reject) => {
-                        courseData.push({"id":id, "contents":data});
+                        courseData.push({"id":id, "contents":data, "url":CAurl});
                         resolve(id);
                     })
                 })
