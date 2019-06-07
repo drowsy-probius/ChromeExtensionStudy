@@ -7,6 +7,14 @@ body{
   .container{
     margin: 0 auto;
   }
+
+  li > p{
+    display: inline-block;
+    margin-top: 1em;
+    margin-bottom: 1em;
+    margin-left: 3px;
+    margin-right: 0;
+  }
    
   .tabs{
     text-overflow: ellipsis;

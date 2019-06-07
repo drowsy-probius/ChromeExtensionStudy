@@ -61,9 +61,14 @@ function refresh(){   // 평소에 실행
         .then(function(msg){
             return Promise.all(_promiseUpdateCourseData(courseData))
         })
-        .then(function(updateArray){
-            console.log(updateArray)
-            chrome.runtime.sendMessage({updateInfo: updateArray})
+        .then(function(_updateArray){
+            for(let i = 0; i<_updateArray.length; i++){
+                if(_updateArray[i][1] > 0){
+                    chrome.runtime.sendMessage({updateInfo: _updateArray});
+                    break;
+                }
+            }
+            console.log("No new data");
         })
         .catch(console.log.bind(console));
 }
@@ -72,7 +77,6 @@ let _promiseLogin = function(id, pw){
     return new Promise((resolve, reject) => {
         $.ajax({
             url: "https://auth.korea.ac.kr/directLoginNew.jsp",
-            async: false,
             type: "POST",
             data: {
                     "id": id,

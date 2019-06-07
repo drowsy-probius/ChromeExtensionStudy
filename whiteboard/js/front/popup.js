@@ -11,7 +11,6 @@ $('#login').click(function () {
 
 $('#reload').click(function () {
     chrome.runtime.sendMessage({ act: "reload" }, function (response) {
-        $('.container > .tabs').html('');
         console.log(response.farewell);
     })
 })
@@ -35,7 +34,21 @@ chrome.runtime.onMessage.addListener(
         }
 
         if(request.updateInfo !== undefined){
-            console.log(request.updateInfo);
+            $('.container > .tabs').html('');
+            let _courseMetaData = [];
+            _promiseGetMetaData()
+            .then(function(courseMetaData){
+                _courseMetaData = courseMetaData;
+                return _promiseGetData()
+            })
+            .then(function(_courseData){
+                return _promiseMakeElements(_courseMetaData, _courseData, request.updateInfo);
+            })
+            .then(function(tmp){
+                chrome.storage.local.set({"content": tmp.html()}); 
+                render(tmp.html());
+            })
+            .catch(console.log.bind(console))
         }
         return true;
     }
@@ -52,17 +65,12 @@ let _promiseSetData = function () {
         .then(function (courseMetaData) {
             console.log(courseMetaData);
             console.log(_courseData);
-            return _promiseMakeElements(courseMetaData, _courseData)
+            return _promiseMakeElements(courseMetaData, _courseData, null)
         })
-        .then(function(){
-            return new Promise((resolve, reject) => {
-                let _content = $('.container > .tabs').html();
-                chrome.storage.local.set({"content": _content});
-                resolve(_content);    
-            })
-        })
-        .then(function(content) {
-            render(content);         
+        .then(function(tmp){
+            chrome.storage.local.set({ "content": tmp.html() });
+            render(tmp.html())
+
         })
         .catch(console.log.bind(console))
 
@@ -85,7 +93,7 @@ let _promiseGetData = function () {
 };
 
 function render(_content){
-    $('.container > .tabs').html(_content);
+    $('.container > .tabs').append(_content);
 
     $('#message').addClass('hide');
     $('#loginform').addClass('hide');
@@ -122,8 +130,9 @@ function render(_content){
     })
 };
 
-let _promiseMakeElements = function (courseMetaData, courseData){
+let _promiseMakeElements = function (courseMetaData, courseData, updateInfo){
     return new Promise((resolve, reject) => {
+        let tmp = $('<div></div>');
         courseMetaData.forEach(course => {
             let course_link = $('<li></li>');
             let content_container = $('<div></div>');
@@ -173,40 +182,48 @@ let _promiseMakeElements = function (courseMetaData, courseData){
                 content_container.append(content);
             }
 
-            $('.container > .tabs').append(course_link);
+            tmp.append(course_link);
             course_link.after(content_container);
         })
-        resolve("OK");
+        if(updateInfo === null){
+            $(tmp).find(".content-link").append(`<p>0</p>`);
+        }else{
+            updateInfo.forEach((course)=>{
+                $(tmp).find("[data-tab="+course[0]+"]").append(`<p>${course[1]}</p>`);
+            })
+        }
+        resolve(tmp);
     });
 };
 
 (function(){
     _promiseGetMetaData()
-        .then(function(_courseMetaData){
-            if(_courseMetaData !== undefined){
-                if(!$('.container > .tabs').html().trim()){
+    .then(function(_courseMetaData){
+        if(_courseMetaData !== undefined){
+            chrome.storage.local.get("content", (result) => {
+                if(result.content !== undefined){
+                    render(result.content);
+                }else{
                     _promiseGetData()
                     .then(function(courseData){
-                        return _promiseMakeElements(_courseMetaData, courseData);
+                        return _promiseMakeElements(_courseMetaData, courseData, null);
                     })
-                    .then(function(){
-                        return new Promise((resolve, reject) => {
-                            let _content = $('.container > .tabs').html();
-                            chrome.storage.local.set({"content": _content});
-                            resolve(_content);    
-                        })
-                    })
-                    .then(function(content) {
-                        render(content);         
+                    .then(function(tmp){
+                        console.log(tmp.html());
+                        render(tmp.html())
+                        chrome.storage.local.set({"content": tmp.html()});
                     })
                     .catch(console.log.bind(console))
-                }else{
-                    chrome.storage.local.get("content", (result) => {
-                        if(result.content !== undefined){
-                            render(result.content);
-                        }
-                    });
                 }
-            }
-        });
+            });
+        }
+    })
+    chrome.storage.local.get("INTERVAL", (result) => {
+        if(result.INTERVAL === undefined){
+            $('#interval').attr("placeholder", "새로고침 간격(현재 120분)");
+        }else{
+            $('#interval').attr("placeholder", "새로고침 간격(현재 "+result.INTERVAL+"분)");
+        }
+        
+    });
 })();
