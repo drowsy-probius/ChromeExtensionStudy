@@ -2,40 +2,54 @@ body{
   width: 450px;
   height: 350px;
     margin-top: 10px;
-    line-height: 1.6
+    line-height: 1.3
   }
   .container{
     margin: 0 auto;
   }
 
-
-  li > p{
+  li > .newContent{
+    color: #7c3131;
+    background: #ffcbc6;
     display: inline-block;
     margin-top: 1em;
     margin-bottom: 1em;
-    margin-left: 3px;
+    margin-left: 4px;
     margin-right: 0;
   }
    
+  .new{
+    background: #ffe7e5;
+  }
+
   .tabs{
-    text-overflow: ellipsis;
+    overflow: ellipsis;
     margin: 0px;
     padding: 0px;
     list-style: none;
   }
-  .tabs li{
-    text-overflow: ellipsis;
-    display: inline-block;
+  .tabs > .course-link{
+    overflow: ellipsis;
     background: none;
     color: #222;
     display: inline-block;
-    padding: 10px 15px;
+    padding: 15px;
     cursor: pointer;
+  }
+
+  .tabs > .content-link{
+    overflow: ellipsis;
+    background: none;
+    color: #222;
+    display: inline-block;
+    padding: 12.21px;
+    cursor: pointer;
+    line-height: 1px;
   }
    
   .course-link.current{
-    width: 98%;
-    text-overflow: ellipsis;
+    width: 93%;
+    overflow: ellipsis;
     background: #f7f7f7;
     color: #222;
   }
@@ -46,7 +60,7 @@ body{
   }
    
   .content-container.current{
-    width: 98%;
+    width: 93%;
     display: inherit;
     background: #ededed;
   }
@@ -57,12 +71,11 @@ body{
 
   .content{
     display: none;
-    padding: 15px;
+    padding: 21px;
   }
    
   .content.current{
-    overflow: hidden; 
-    text-overflow: ellipsis;
+    overflow: auto; 
     white-space: nowrap; 
     width: 90%;
     height: 150px;
@@ -71,7 +84,7 @@ body{
   }
 
   .content.current div{
-    text-overflow: ellipsis;
+    overflow: ellipsis;
   }
 
   div#menu{
@@ -93,7 +106,7 @@ body{
 }
 
 .text{
-  text-overflow: ellipsis;
+  overflow: ellipsis;
 }
 
 .hide{

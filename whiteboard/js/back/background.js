@@ -10,9 +10,30 @@ chrome.runtime.onMessage.addListener(
     console.log("submit received");
 
     if(request.act === "reload"){
-      refresh()
+      refresh() // in init.js
+      .then(function(msg){
+        console.log(msg);
+        return new Promise((resolve, reject)=>{
+          let BADGE = 0;
+          chrome.storage.local.get("updateInfo", (result)=>{
+            result.updateInfo.forEach(element => {
+              BADGE += element[1];
+            });
+            resolve(BADGE);
+          })
+        })
+      })
+      .then(function(BADGE){
+        console.log(BADGE);
+        SetBadge(BADGE);
+        chrome.runtime.sendMessage({isUpdate: "Yes"})
+      })
       .catch(console.log.bind(console))
       sendResponse({ farewell: "reloading..." });
+    }
+
+    if(request.act === "removeBadge"){
+      SetBadge(0);
     }
 
     if(request.user !== undefined){

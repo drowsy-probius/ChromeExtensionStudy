@@ -53,9 +53,9 @@ let _promiseGetCourseAnnouncements = function(responseText){
         if (announcementList) {
             for (let i = 0; i < announcementList.children.length; i++) {
 
-                let title = announcementList.children[i].children[0].innerText; //innerHTML
-                let content = announcementList.children[i].children[1].innerText;
-                let author = announcementList.children[i].children[2].innerText;
+                let title = announcementList.children[i].getElementsByClassName('item')[0].innerText; //innerHTML
+                let content = announcementList.children[i].getElementsByClassName('vtbegenerated')[0].innerHTML;
+                let author = announcementList.children[i].getElementsByClassName('announcementInfo')[0].innerText;
 
                 if (title) {
                     if(!content) content = "";
@@ -126,12 +126,12 @@ let _promiseGetCourseContents = function (id, responseText, CCurl){
 
         if (contents) {
             for (let i = 0; i < contents.children.length; i++) {
-                let title = contents.children[i].children[1].children[0].innerText;
-                let file = contents.children[i].children[2].children[0] ? contents.children[i].children[2].children[0].innerText : "";
-                let content = contents.children[i].children[2].children[1] ? contents.children[i].children[2].children[1].innerText : "";
+                let title = contents.children[i].getElementsByClassName('item')[0].innerText;
+                //let file = contents.children[i].getElementsByClassName('attachments')[0] ? contents.children[i].getElementsByClassName('attachments')[0].innerText : "";
+                let content = contents.children[i].getElementsByClassName('vtbegenerated')[0] ? contents.children[i].getElementsByClassName('vtbegenerated')[0].innerText : "";
 
                 if (title) {
-                    result.push({ "order": i, "title": title, "content": content, "file": file });
+                    result.push({ "order": i, "title": title, "content": content});
                 }
             }
         }
@@ -147,12 +147,11 @@ let _promiseGetCourseContents2 = function (responseText){
 
         if (contents) {
             for (let i = 0; i < contents.children.length; i++) {
-                let title = contents.children[i].children[1].children[0].innerText;
-                let file = contents.children[i].children[2].children[0] ? contents.children[i].children[2].children[0].innerText : "";
-                let content = contents.children[i].children[2].children[1] ? contents.children[i].children[2].children[1].innerText : "";
+                let title = contents.children[i].getElementsByClassName('item')[0].innerText;
+                let content = contents.children[i].getElementsByClassName('vtbegenerated')[0] ? contents.children[i].getElementsByClassName('vtbegenerated')[0].innerText : "";
 
                 if (title) {
-                    result.push({ "order": i, "title": title, "content": content, "file": file });
+                    result.push({ "order": i, "title": title, "content": content});
                 }
             }
         }
@@ -214,4 +213,4 @@ let _promiseGetNewData = function getNewData(url) {
         
     })
 
-} 
+}

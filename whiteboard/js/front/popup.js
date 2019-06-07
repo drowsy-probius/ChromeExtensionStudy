@@ -29,24 +29,37 @@ chrome.runtime.onMessage.addListener(
 
         console.log("submit received");
 
+        if(request.Error !== undefined){
+            $('#message').text(request.Error);
+        }
+
         if (request.isSet === "Yes") {
             _promiseSetData()
         }
 
-        if(request.updateInfo !== undefined){
+        if(request.isUpdate === "Yes"){
             $('.container > .tabs').html('');
             let _courseMetaData = [];
-            _promiseGetMetaData()
+            let _updateInfo = [];
+            return new Promise((resolve, reject) => {
+                chrome.storage.local.get("updateInfo", (result)=>{
+                    _updateInfo = result.updateInfo;
+                    resolve("OK");
+                })
+            })
+            .then(function(){
+                return _promiseGetMetaData()
+            })
             .then(function(courseMetaData){
                 _courseMetaData = courseMetaData;
                 return _promiseGetData()
             })
             .then(function(_courseData){
-                return _promiseMakeElements(_courseMetaData, _courseData, request.updateInfo);
+                return _promiseMakeElements(_courseMetaData, _courseData, _updateInfo);
             })
             .then(function(tmp){
                 chrome.storage.local.set({"content": tmp.html()}); 
-                render(tmp.html());
+                //render(tmp.html());
             })
             .catch(console.log.bind(console))
         }
@@ -68,9 +81,8 @@ let _promiseSetData = function () {
             return _promiseMakeElements(courseMetaData, _courseData, null)
         })
         .then(function(tmp){
-            chrome.storage.local.set({ "content": tmp.html() });
+            //chrome.storage.local.set({ "content": tmp.html() });
             render(tmp.html())
-
         })
         .catch(console.log.bind(console))
 
@@ -168,10 +180,13 @@ let _promiseMakeElements = function (courseMetaData, courseData, updateInfo){
                         elem.contents.forEach(e => {
                             let d = $('<div></div>');
                             let h3 = $('<h3>' + e.title.trim() + '</h3>');
-                            let h4 = $('<p>' + e.content.trim() + '</p>');
+                            //let h4 = $('<p>' + e.content.trim() + '</p>');
+                            let h4 = $('<p></p>');
+                            h4.html(e.content)
 
                             d.append(h3);
                             d.append(h4);
+                            d.append($('<hr>'));
                             p.append(d);
                         })
                     }
@@ -186,12 +201,24 @@ let _promiseMakeElements = function (courseMetaData, courseData, updateInfo){
             course_link.after(content_container);
         })
         if(updateInfo === null){
-            $(tmp).find(".content-link").append(`<p>0</p>`);
+            $(tmp).find(".content-link").append(`<p class="newContent">  0  </p>`);
         }else{
             updateInfo.forEach((course)=>{
-                $(tmp).find("[data-tab="+course[0]+"]").append(`<p>${course[1]}</p>`);
+                $(tmp).find("[data-content="+course[0]+"]").append(`<p class="newContent">  ${course[1]}  </p>`);
+                if(course[1] > 0){
+                    $(tmp).find("[data-content="+course[0]+"]").addClass("new");
+                    $(tmp).find("[data-course="+course[0]+"]").addClass("new");
+                    $(tmp).find("[data-container="+course[0]+"]").addClass("new");
+                    $(tmp).find("#"+course[0]).addClass("new");
+                }else{
+                    $(tmp).find("[data-content="+course[0]+"]").removeClass("new");
+                    $(tmp).find("[data-course="+course[0]+"]").removeClass("new");
+                    $(tmp).find("[data-container="+course[0]+"]").removeClass("new");
+                    $(tmp).find("#"+course[0]).removeClass("new");
+                }
             })
         }
+        
         resolve(tmp);
     });
 };
@@ -200,22 +227,17 @@ let _promiseMakeElements = function (courseMetaData, courseData, updateInfo){
     _promiseGetMetaData()
     .then(function(_courseMetaData){
         if(_courseMetaData !== undefined){
-            chrome.storage.local.get("content", (result) => {
-                if(result.content !== undefined){
-                    render(result.content);
-                }else{
-                    _promiseGetData()
-                    .then(function(courseData){
-                        return _promiseMakeElements(_courseMetaData, courseData, null);
-                    })
-                    .then(function(tmp){
-                        console.log(tmp.html());
-                        render(tmp.html())
-                        chrome.storage.local.set({"content": tmp.html()});
-                    })
-                    .catch(console.log.bind(console))
-                }
-            });
+            chrome.storage.local.get("updateInfo", (updateResult)=>{
+                if(updateResult.updateInfo === undefined){updateResult.updateInfo=null}
+                _promiseGetData()
+                .then(function(courseData){
+                    return _promiseMakeElements(_courseMetaData, courseData, updateResult.updateInfo);
+                })
+                .then(function(tmp){
+                    render(tmp.html())
+                })
+                .catch(console.log.bind(console));
+            })
         }
     })
     chrome.storage.local.get("INTERVAL", (result) => {
@@ -226,4 +248,5 @@ let _promiseMakeElements = function (courseMetaData, courseData, updateInfo){
         }
         
     });
+    chrome.runtime.sendMessage({act: "removeBadge"});
 })();

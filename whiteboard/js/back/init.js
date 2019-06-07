@@ -21,6 +21,14 @@ function init(id, pw, stdId){ // 매 학기 시작마다 실행(3월, 8월)
             userid = _userid;
             return _promiseURLGET("https://kulms.korea.ac.kr/learn/api/public/v1/users/" + userid + "/courses");
         })
+        .catch(function(loginerror){
+            return new Promise((resolve, reject)=>{
+                console.log(loginerror);
+                chrome.runtime.sendMessage({Error: "로그인에 실패했습니다. 사용자 정보를 다시 확인해주세요."})
+                reject("LoinFailed");
+            })
+        })
+
         .then(function(responseText){
             return _promiseGetCourseIds(responseText);  // course id 불러옴.
         })
@@ -30,12 +38,21 @@ function init(id, pw, stdId){ // 매 학기 시작마다 실행(3월, 8월)
         .then(function(cids){   // SetCourseContents
             return Promise.all(_MakePromiseArrayBB(cids));
         })
+        .catch(function(loginerror){
+            return new Promise((resolve, reject)=>{
+                console.log(loginerror);
+                chrome.runtime.sendMessage({Error: "정보를 불러오지 못했습니다. 다시 로그인해주세요."})
+                reject("LoinFailed");
+            })
+        })
+
         .then(function(cids){   // course content's ids
-             console.log(courseData);
-             console.log(courseMetaData);
+            console.log(courseData);
+            console.log(courseMetaData);
+            let encrypted = CryptoJS.AES.encrypt(pw, id+userid);
             return Promise.all([
                 new Promise((resolve, reject) => {chrome.storage.local.set({"id": id}); resolve("OK"); }),
-                new Promise((resolve, reject) => {chrome.storage.local.set({"pw": pw}); resolve("OK"); }),
+                new Promise((resolve, reject) => {chrome.storage.local.set({"pw": encrypted}); resolve("OK"); }),
                 new Promise((resolve, reject) => {chrome.storage.local.set({"stdId": stdId}); resolve("OK"); }),
                 new Promise((resolve, reject) => {chrome.storage.local.set({"userid": userid}); resolve("OK"); }),
                 new Promise((resolve, reject) => {chrome.storage.local.set({"courseMetaData": courseMetaData}); resolve("OK"); }),
@@ -43,34 +60,47 @@ function init(id, pw, stdId){ // 매 학기 시작마다 실행(3월, 8월)
             ])
         })
         .catch(console.log.bind(console));
-    
 }
 
 function refresh(){   // 평소에 실행
-    let id='', pw = '';
+    let id='', pw = '', userid = '', encrypted = '';
     courseData = [];
 
     return Promise.all([
         new Promise((resolve, reject)=>{chrome.storage.local.get("id", (result)=>{id=result.id; resolve("OK");});}),
-        new Promise((resolve, reject)=>{chrome.storage.local.get("pw", (result)=>{pw=result.pw; resolve("OK");});}),
+        new Promise((resolve, reject)=>{chrome.storage.local.get("pw", (result)=>{encrypted=result.pw; resolve("OK");});}),
+        new Promise((resolve, reject)=>{chrome.storage.local.get("userid", (result)=>{userid=result.userid; resolve("OK");});}),
         new Promise((resolve, reject)=>{chrome.storage.local.get("courseData", (result)=>{courseData=result.courseData; resolve("OK");});})
         ])
         .then(function(msg){
+            pw = CryptoJS.AES.decrypt(encrypted, id+userid).toString(CryptoJS.enc.Utf8);
             return _promiseLogin(id, pw)
         })
         .then(function(msg){
             return Promise.all(_promiseUpdateCourseData(courseData))
         })
         .then(function(_updateArray){
-            for(let i = 0; i<_updateArray.length; i++){
-                if(_updateArray[i][1] > 0){
-                    chrome.runtime.sendMessage({updateInfo: _updateArray});
-                    break;
+            return new Promise((resolve, reject)=>{
+                let check = 0;
+                for(let i = 0; i<_updateArray.length; i++){
+                    if(_updateArray[i][1] > 0){
+                        check = 1;
+                        break;
+                    }
                 }
-            }
-            console.log("No new data");
+                if(check == 1){
+                    chrome.storage.local.set({ "courseData": courseData }, function () {
+                        chrome.storage.local.set({ "updateInfo": _updateArray }, function () {
+                            chrome.runtime.sendMessage({ isUpdate: "Yes" });
+                            resolve("We have new data");
+                        });
+                    })
+                }else{
+                    reject("We have no new data");
+                }
+            })
         })
-        .catch(console.log.bind(console));
+
 }
 
 let _promiseLogin = function(id, pw){
@@ -144,4 +174,15 @@ let _promiseSearchID = function searchID(key){
         });
         reject(Error("No matches"));
     })
+}
+
+function SetBadge(value){
+    if(value == 0){value = ''}
+    chrome.browserAction.setBadgeText({
+        'text': value+''
+    });
+
+    chrome.browserAction.setBadgeBackgroundColor({
+        'color': '#333333'
+    });
 }

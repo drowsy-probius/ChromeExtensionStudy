@@ -1,6 +1,7 @@
-로그인: 학번로그인
-pw 암호화? 해서 저장?
+로그인: 학번로그인 이거 할까
 
+업데이트 과정 테스트 !!!! 지금 새로 업데이트된 부분 색 표현이 안됨 고쳐야함.
+chrome.storage.local.get("courseData", (result)=>{result.courseData[2].contents=[]; chrome.storage.local.set({"courseData": result.courseData});});
 
 
 blackboard api를 이용해서 코스 별로
