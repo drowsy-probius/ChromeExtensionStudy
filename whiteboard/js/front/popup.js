@@ -1,33 +1,48 @@
 $('#login').click(function () {
-    let id = $('#id').val();
     let stdId = $('#stdId').val();
     let pw = $('#pw').val();
+    stdId = stdId.replace(/\s/gi, "");
 
-    chrome.runtime.sendMessage({ user: [id, pw, stdId] }, function (response) {
-        console.log(response.farewell);
-    })
-
+    if(isNaN(stdId) || pw==""){
+        $('#message').text('올바른 정보를 입력해 주세요.')
+        if(isNaN(stdId)){
+            $('#stdId').val('');
+        }else{
+            $('#pw').val('');
+        }
+    }else{
+        chrome.runtime.sendMessage({ user: [stdId, pw] }, function (response) {
+            //console.log(response.farewell);
+        })
+    }
 });
 
 $('#reload').click(function () {
     chrome.runtime.sendMessage({ act: "reload" }, function (response) {
-        console.log(response.farewell);
+        //console.log(response.farewell);
     })
 })
 
 $('#setinterval').click(function(){
-    chrome.runtime.sendMessage({interval: $('#interval').val()}, function(response){
-        console.log(response.farewell);
-    })
+    let time = $('#interval').val();
+    if(isNaN(time)){
+        $('#interval').val('');
+        $('#interval').attr("placeholder", "숫자만 입력해 주세요. (현재 간격: "+time+"분)");
+    }else{
+        chrome.runtime.sendMessage({interval: time}, function(response){
+            $('#interval').val('');
+            $('#interval').attr("placeholder", "새로고침 간격(현재: "+time+"분)");
+        })
+    }
 })
 
 chrome.runtime.onMessage.addListener(
     function (request, sender, sendResponse) {
-        console.log(sender.tab ?
-            "from a content script:" + sender.tab.url :
-            "from the extension");
+        // console.log(sender.tab ?
+        //     "from a content script:" + sender.tab.url :
+        //     "from the extension");
 
-        console.log("submit received");
+        // console.log("submit received");
 
         if(request.Error !== undefined){
             $('#message').text(request.Error);
@@ -38,7 +53,6 @@ chrome.runtime.onMessage.addListener(
         }
 
         if(request.isUpdate === "Yes"){
-            $('.container > .tabs').html('');
             let _courseMetaData = [];
             let _updateInfo = [];
             return new Promise((resolve, reject) => {
@@ -58,8 +72,9 @@ chrome.runtime.onMessage.addListener(
                 return _promiseMakeElements(_courseMetaData, _courseData, _updateInfo);
             })
             .then(function(tmp){
-                chrome.storage.local.set({"content": tmp.html()}); 
-                //render(tmp.html());
+                $('.container > .tabs').html('');
+                chrome.storage.local.set({ "content": tmp.html() });
+                render(tmp.html());
             })
             .catch(console.log.bind(console))
         }
@@ -76,12 +91,12 @@ let _promiseSetData = function () {
             return _promiseGetMetaData()
         })
         .then(function (courseMetaData) {
-            console.log(courseMetaData);
-            console.log(_courseData);
+            // console.log(courseMetaData);
+            // console.log(_courseData);
             return _promiseMakeElements(courseMetaData, _courseData, null)
         })
         .then(function(tmp){
-            //chrome.storage.local.set({ "content": tmp.html() });
+            chrome.storage.local.set({ "content": tmp.html() });
             render(tmp.html())
         })
         .catch(console.log.bind(console))
@@ -126,12 +141,16 @@ function render(_content){
             $("[data-container=" + tab_id + "]").addClass('current');
         }
 
+        chrome.storage.local.set({ "content": $('.container > .tabs').html() });
     })
 
     $('.content-link').click(function () {
         let content_id = $(this).attr('data-content');
         let isCurrent = $(this).attr('class').search("current");
 
+        $('.content-link > .newContent').text('  0  ')
+        $('.course-link').removeClass('new');
+        $('.content-link').removeClass('new');
         $('.content-link').removeClass('current');
         $('.content').removeClass('current');
 
@@ -139,6 +158,7 @@ function render(_content){
             $(this).addClass('current');
             $("#" + content_id).addClass('current');
         }
+        chrome.storage.local.set({ "content": $('.container > .tabs').html() });
     })
 };
 
@@ -208,15 +228,12 @@ let _promiseMakeElements = function (courseMetaData, courseData, updateInfo){
                 if(course[1] > 0){
                     $(tmp).find("[data-content="+course[0]+"]").addClass("new");
                     $(tmp).find("[data-course="+course[0]+"]").addClass("new");
-                    $(tmp).find("[data-container="+course[0]+"]").addClass("new");
-                    $(tmp).find("#"+course[0]).addClass("new");
-                }else{
-                    $(tmp).find("[data-content="+course[0]+"]").removeClass("new");
-                    $(tmp).find("[data-course="+course[0]+"]").removeClass("new");
-                    $(tmp).find("[data-container="+course[0]+"]").removeClass("new");
-                    $(tmp).find("#"+course[0]).removeClass("new");
+                    //$(tmp).find("[data-container="+course[0]+"]").addClass("new");
+                    //$(tmp).find("#"+course[0]).addClass("new");
                 }
             })
+            chrome.storage.local.set({ "updateInfo": 0 });
+            chrome.runtime.sendMessage({act: "removeBadge"});
         }
         
         resolve(tmp);
@@ -224,29 +241,67 @@ let _promiseMakeElements = function (courseMetaData, courseData, updateInfo){
 };
 
 (function(){
-    _promiseGetMetaData()
-    .then(function(_courseMetaData){
-        if(_courseMetaData !== undefined){
-            chrome.storage.local.get("updateInfo", (updateResult)=>{
-                if(updateResult.updateInfo === undefined){updateResult.updateInfo=null}
-                _promiseGetData()
-                .then(function(courseData){
-                    return _promiseMakeElements(_courseMetaData, courseData, updateResult.updateInfo);
-                })
-                .then(function(tmp){
-                    render(tmp.html())
-                })
-                .catch(console.log.bind(console));
+    chrome.storage.local.get("updateInfo", (updateResult) => {
+        if (updateResult.updateInfo === undefined) {  // 업데이트를 한번도 안한 상태
+            _promiseGetMetaData()
+            .then(function (_courseMetaData) {
+                if (_courseMetaData !== undefined) {
+                    _promiseGetData()
+                        .then(function (courseData) {
+                            return _promiseMakeElements(_courseMetaData, courseData, null);
+                        })
+                        .then(function (tmp) {
+                            render(tmp.html())
+                        })
+                        .catch(console.log.bind(console));
+
+                }
+            })
+        } else if (updateResult.updateInfo === 0) {   // 이미 한번 구현된 상태
+            chrome.storage.local.get("content", (contentResult) => {
+                if (contentResult.content !== undefined) {
+                    render(contentResult.content);
+                } else {
+                    _promiseGetMetaData()
+                    .then(function (_courseMetaData) {
+                        if (_courseMetaData !== undefined) {
+                            _promiseGetData()
+                                .then(function (courseData) {
+                                    return _promiseMakeElements(_courseMetaData, courseData, null);
+                                })
+                                .then(function (tmp) {
+                                    render(tmp.html())
+                                })
+                                .catch(console.log.bind(console));
+        
+                        }
+                    })
+                }
+            })
+        } else { // 업데이트는 했으나 구현은 안된 상태
+            _promiseGetMetaData()
+            .then(function (_courseMetaData) {
+                if (_courseMetaData !== undefined) {
+                    _promiseGetData()
+                        .then(function (courseData) {
+                            return _promiseMakeElements(_courseMetaData, courseData, updateResult.updateInfo);
+                        })
+                        .then(function (tmp) {
+                            render(tmp.html())
+                        })
+                        .catch(console.log.bind(console));
+
+                }
             })
         }
     })
+   
     chrome.storage.local.get("INTERVAL", (result) => {
         if(result.INTERVAL === undefined){
-            $('#interval').attr("placeholder", "새로고침 간격(현재 120분)");
+            $('#interval').attr("placeholder", "새로고침 간격(현재: 120분)");
         }else{
-            $('#interval').attr("placeholder", "새로고침 간격(현재 "+result.INTERVAL+"분)");
+            $('#interval').attr("placeholder", "새로고침 간격(현재: "+result.INTERVAL+"분)");
         }
         
     });
-    chrome.runtime.sendMessage({act: "removeBadge"});
 })();

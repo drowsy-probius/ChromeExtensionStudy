@@ -10,7 +10,7 @@ body{
 
   li > .newContent{
     color: #7c3131;
-    background: #ffcbc6;
+    background: #ffcbc6 !important;
     display: inline-block;
     margin-top: 1em;
     margin-bottom: 1em;
@@ -19,7 +19,7 @@ body{
   }
    
   .new{
-    background: #ffe7e5;
+    background: #ffe7e5 !important;
   }
 
   .tabs{
@@ -29,6 +29,7 @@ body{
     list-style: none;
   }
   .tabs > .course-link{
+    width: 93%;
     overflow: ellipsis;
     background: none;
     color: #222;

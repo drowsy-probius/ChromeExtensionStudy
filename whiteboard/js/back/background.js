@@ -1,18 +1,40 @@
 let INTERVAL = 120;
-let autoreload = null;
+
+chrome.alarms.onAlarm.addListener(function (alarm) {
+  console.log(1);
+  refresh()
+    .then(function (msg) {
+      // console.log(msg);
+      return new Promise((resolve, reject) => {
+        let BADGE = 0;
+        chrome.storage.local.get("updateInfo", (result) => {
+          result.updateInfo.forEach(element => {
+            BADGE += element[1];
+          });
+          resolve(BADGE);
+        })
+      })
+    })
+    .then(function (BADGE) {
+      // console.log(BADGE);
+      SetBadge(BADGE);
+      chrome.runtime.sendMessage({ isUpdate: "Yes" })
+    })
+    .catch(console.log.bind(console))
+});
 
 chrome.runtime.onMessage.addListener(
     function(request, sender, sendResponse) {
-    console.log(sender.tab ?
-                  "from a content script:" + sender.tab.url :
-                  "from the extension");
+    // console.log(sender.tab ?
+    //               "from a content script:" + sender.tab.url :
+    //               "from the extension");
 
-    console.log("submit received");
+    // console.log("submit received");
 
     if(request.act === "reload"){
       refresh() // in init.js
       .then(function(msg){
-        console.log(msg);
+        // console.log(msg);
         return new Promise((resolve, reject)=>{
           let BADGE = 0;
           chrome.storage.local.get("updateInfo", (result)=>{
@@ -24,7 +46,7 @@ chrome.runtime.onMessage.addListener(
         })
       })
       .then(function(BADGE){
-        console.log(BADGE);
+        // console.log(BADGE);
         SetBadge(BADGE);
         chrome.runtime.sendMessage({isUpdate: "Yes"})
       })
@@ -37,13 +59,14 @@ chrome.runtime.onMessage.addListener(
     }
 
     if(request.user !== undefined){
-      let [id, pw, stdId] = request.user;
-      init(id, pw, stdId)
+      let [stdId, pw] = request.user;
+      init(stdId, pw)
       .then(function(e){
         chrome.runtime.sendMessage({isSet: "Yes"})
       })
       .then(function(e){
-        autoreload = setInterval(refresh, INTERVAL * 60 * 1000)
+        chrome.alarms.clearAll()
+        chrome.alarms.create({ when: Date.now()+1000, periodInMinutes: INTERVAL*1});
         chrome.storage.local.set({"INTERVAL": INTERVAL});
       })
       .catch(console.log.bind(console))
@@ -56,8 +79,8 @@ chrome.runtime.onMessage.addListener(
       }else{
         INTERVAL = request.interval;
       }
-      clearInterval(autoreload);
-      autoreload = setInterval(refresh, INTERVAL * 60 * 1000);
+      chrome.alarms.clearAll()
+      chrome.alarms.create({ when: Date.now()+1000, periodInMinutes: INTERVAL*1});
       chrome.storage.local.set({"INTERVAL": INTERVAL});
 
       sendResponse({ farewell: "time interval set" });

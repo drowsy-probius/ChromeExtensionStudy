@@ -3,15 +3,15 @@ let userid;
 let courseMetaData; // [{course id, course name, material id, assignment id}, ] 저장 
 let courseData; // [ {id: content}, ] 저장
 
-function init(id, pw, stdId){ // 매 학기 시작마다 실행(3월, 8월)
+function init(stdId, pw){ // 매 학기 시작마다 실행(3월, 8월)
 
     userid='';
     courseMetaData=[];
     courseData=[];
 
-    return _promiseLogin(id, pw)
+    return _promiseLogin(stdId, pw)
         .then(function(responseText){    // user id 가져올 주소 접근
-            // console.log(responseText);
+            //console.log(responseText);
             return _promiseURLGET("https://kulms.korea.ac.kr/learn/api/public/v1/users?userName=" + stdId);
         })
         .then(function(responseText){    
@@ -25,7 +25,7 @@ function init(id, pw, stdId){ // 매 학기 시작마다 실행(3월, 8월)
             return new Promise((resolve, reject)=>{
                 console.log(loginerror);
                 chrome.runtime.sendMessage({Error: "로그인에 실패했습니다. 사용자 정보를 다시 확인해주세요."})
-                reject("LoinFailed");
+                reject("LoginFailed");
             })
         })
 
@@ -42,18 +42,17 @@ function init(id, pw, stdId){ // 매 학기 시작마다 실행(3월, 8월)
             return new Promise((resolve, reject)=>{
                 console.log(loginerror);
                 chrome.runtime.sendMessage({Error: "정보를 불러오지 못했습니다. 다시 로그인해주세요."})
-                reject("LoinFailed");
+                reject("LoginFailed");
             })
         })
 
         .then(function(cids){   // course content's ids
-            console.log(courseData);
-            console.log(courseMetaData);
-            let encrypted = CryptoJS.AES.encrypt(pw, id+userid);
+            //console.log(courseData);
+            //console.log(courseMetaData);
+            let encrypted = CryptoJS.AES.encrypt(pw, stdId+userid);
             return Promise.all([
-                new Promise((resolve, reject) => {chrome.storage.local.set({"id": id}); resolve("OK"); }),
-                new Promise((resolve, reject) => {chrome.storage.local.set({"pw": encrypted}); resolve("OK"); }),
                 new Promise((resolve, reject) => {chrome.storage.local.set({"stdId": stdId}); resolve("OK"); }),
+                new Promise((resolve, reject) => {chrome.storage.local.set({"pw": encrypted}); resolve("OK"); }),
                 new Promise((resolve, reject) => {chrome.storage.local.set({"userid": userid}); resolve("OK"); }),
                 new Promise((resolve, reject) => {chrome.storage.local.set({"courseMetaData": courseMetaData}); resolve("OK"); }),
                 new Promise((resolve, reject) => {chrome.storage.local.set({"courseData": courseData}); resolve("OK"); })
@@ -63,18 +62,18 @@ function init(id, pw, stdId){ // 매 학기 시작마다 실행(3월, 8월)
 }
 
 function refresh(){   // 평소에 실행
-    let id='', pw = '', userid = '', encrypted = '';
+    let stdId = '', pw = '', userid = '', encrypted = '';
     courseData = [];
 
     return Promise.all([
-        new Promise((resolve, reject)=>{chrome.storage.local.get("id", (result)=>{id=result.id; resolve("OK");});}),
+        new Promise((resolve, reject)=>{chrome.storage.local.get("stdId", (result)=>{stdId=result.stdId; resolve("OK");});}),
         new Promise((resolve, reject)=>{chrome.storage.local.get("pw", (result)=>{encrypted=result.pw; resolve("OK");});}),
         new Promise((resolve, reject)=>{chrome.storage.local.get("userid", (result)=>{userid=result.userid; resolve("OK");});}),
         new Promise((resolve, reject)=>{chrome.storage.local.get("courseData", (result)=>{courseData=result.courseData; resolve("OK");});})
         ])
         .then(function(msg){
-            pw = CryptoJS.AES.decrypt(encrypted, id+userid).toString(CryptoJS.enc.Utf8);
-            return _promiseLogin(id, pw)
+            pw = CryptoJS.AES.decrypt(encrypted, stdId+userid).toString(CryptoJS.enc.Utf8);
+            return _promiseLogin(stdId, pw)
         })
         .then(function(msg){
             return Promise.all(_promiseUpdateCourseData(courseData))
@@ -103,20 +102,16 @@ function refresh(){   // 평소에 실행
 
 }
 
-let _promiseLogin = function(id, pw){
+let _promiseLogin = function(stdId, pw){
     return new Promise((resolve, reject) => {
         $.ajax({
-            url: "https://auth.korea.ac.kr/directLoginNew.jsp",
-            type: "POST",
-            data: {
-                    "id": id,
-                    "pw": pw,
-                    "returnURL": "kulms.korea.ac.kr"
-            },
-            dataType: "html",
+            url: "https://kulms.korea.ac.kr/",
+            type: "GET",
             success: function(data) {
-                let midForm = $("<div></div>").append($.parseHTML(data)).find("form");
-                $.post(midForm.attr("action"), midForm.serialize(), function(data){
+                let form = $("<div></div>").append($.parseHTML(data)).find('#loginBox2').find('form');
+                form.find('#user_id').val(stdId);
+                form.find('#password').val(pw);
+                $.post("https://kulms.korea.ac.kr/"+form.attr("action"), form.serialize(), function(data){
                     resolve(data);
                 });
             }
@@ -183,6 +178,6 @@ function SetBadge(value){
     });
 
     chrome.browserAction.setBadgeBackgroundColor({
-        'color': '#333333'
+        'color': '#dd0000'
     });
 }

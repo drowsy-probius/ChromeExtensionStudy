@@ -1,9 +1,9 @@
 {
     "manifest_version": 2,
     "name": "Whiteboard",
-    "version": "0.0.1",
+    "version": "1.0.0",
 
-    "description": "Blackboard alert",
+    "description": "auto login, simple content viewer, new content alarm for Blackboard™ in Korea University.",
 
     "background": {
         "scripts": ["js/cryptoAES.js", "js/jquery-3.4.1.min.js", "js/back/APIgetinfo.js", "js/back/BBgetinfo.js", "js/back/init.js", "js/back/background.js"],
@@ -14,8 +14,11 @@
         "default_popup": "popup.html"
     },
 
+    "icons": { "32": "icon32.png" },
+
     "permissions": [
         "storage",
+        "alarms",
         "notifications",
         "https://*.korea.ac.kr/*",
         "http://*.korea.ac.kr/*"
