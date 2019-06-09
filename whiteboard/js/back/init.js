@@ -58,7 +58,6 @@ function init(stdId, pw){ // 매 학기 시작마다 실행(3월, 8월)
                 new Promise((resolve, reject) => {chrome.storage.local.set({"courseData": courseData}); resolve("OK"); })
             ])
         })
-        .catch(console.log.bind(console));
 }
 
 function refresh(){   // 평소에 실행
@@ -109,11 +108,15 @@ let _promiseLogin = function(stdId, pw){
             type: "GET",
             success: function(data) {
                 let form = $("<div></div>").append($.parseHTML(data)).find('#loginBox2').find('form');
-                form.find('#user_id').val(stdId);
-                form.find('#password').val(pw);
-                $.post("https://kulms.korea.ac.kr/"+form.attr("action"), form.serialize(), function(data){
-                    resolve(data);
-                });
+                if (form.attr("action") !== undefined) {
+                    form.find('#user_id').val(stdId);
+                    form.find('#password').val(pw);
+                    $.post("https://kulms.korea.ac.kr/" + form.attr("action"), form.serialize(), function (data) {
+                        resolve(data);
+                    });
+                }else{
+                    resolve("OK")
+                }
             }
         });
     })
@@ -172,12 +175,20 @@ let _promiseSearchID = function searchID(key){
 }
 
 function SetBadge(value){
-    if(value == 0){value = ''}
-    chrome.browserAction.setBadgeText({
-        'text': value+''
-    });
-
-    chrome.browserAction.setBadgeBackgroundColor({
-        'color': '#dd0000'
-    });
+    chrome.browserAction.getBadgeText({}, function(current){
+        if(value != 0){
+            if(current == ''){
+                chrome.browserAction.setBadgeText({
+                    'text': value+''
+                });
+            }else{
+                chrome.browserAction.setBadgeText({
+                    'text': ((current*1)+value)==0 ? '' : ((current*1)+value)+'' 
+                });
+            }
+        }
+        chrome.browserAction.setBadgeBackgroundColor({
+            'color': '#dd0000'
+        });
+    })   
 }

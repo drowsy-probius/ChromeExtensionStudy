@@ -1,7 +1,7 @@
 {
     "manifest_version": 2,
     "name": "Whiteboard",
-    "version": "1.0.0",
+    "version": "1.1.2",
 
     "description": "auto login, simple content viewer, new content alarm for Blackboard™ in Korea University.",
 
@@ -14,7 +14,8 @@
         "default_popup": "popup.html"
     },
 
-    "icons": { "32": "icon32.png" },
+    "icons": { "32": "icon32.png",
+                "128": "icon128.png" },
 
     "permissions": [
         "storage",

@@ -147,24 +147,30 @@ function render(_content){
     $('.content-link').click(function () {
         let content_id = $(this).attr('data-content');
         let isCurrent = $(this).attr('class').search("current");
+        let count = $(this).find('.newContent').text();
 
-        $('.content-link > .newContent').text('  0  ')
-        $('.course-link').removeClass('new');
-        $('.content-link').removeClass('new');
+        $(this).find('.newContent').text('  0  ');
+        $(this).removeClass('new');
         $('.content-link').removeClass('current');
         $('.content').removeClass('current');
+        
+        if(!$(this).siblings('.new').length){
+            let selector = $(this).closest("div.content-container").attr("data-container");
+            $("[data-course="+selector+"]").removeClass('new');
+        }
 
         if(isCurrent === -1){
             $(this).addClass('current');
             $("#" + content_id).addClass('current');
         }
         chrome.storage.local.set({ "content": $('.container > .tabs').html() });
+        chrome.runtime.sendMessage({ removeBadge: count*1 });
     })
 };
 
 let _promiseMakeElements = function (courseMetaData, courseData, updateInfo){
     return new Promise((resolve, reject) => {
-        let tmp = $('<div></div>');
+        let tmp = $('<div><hr></div>');
         courseMetaData.forEach(course => {
             let course_link = $('<li></li>');
             let content_container = $('<div></div>');
@@ -199,13 +205,17 @@ let _promiseMakeElements = function (courseMetaData, courseData, updateInfo){
                     if (elem.id == contentlists[title]) {
                         elem.contents.forEach(e => {
                             let d = $('<div></div>');
-                            let h3 = $('<h3>' + e.title.trim() + '</h3>');
-                            //let h4 = $('<p>' + e.content.trim() + '</p>');
-                            let h4 = $('<p></p>');
-                            h4.html(e.content)
+                            let _title = $('<h3>' + e.title.trim() + '</h3>');
+                            
+                            let _content = $('<p></p>');
+                            _content.html(e.content);
 
-                            d.append(h3);
-                            d.append(h4);
+                            let _file = $('<p></p>');
+                            _file.html(e.file);
+
+                            d.append(_title);
+                            d.append(_file);
+                            d.append(_content);
                             d.append($('<hr>'));
                             p.append(d);
                         })
@@ -219,21 +229,21 @@ let _promiseMakeElements = function (courseMetaData, courseData, updateInfo){
 
             tmp.append(course_link);
             course_link.after(content_container);
+            content_container.after('<hr>');
         })
         if(updateInfo === null){
             $(tmp).find(".content-link").append(`<p class="newContent">  0  </p>`);
         }else{
             updateInfo.forEach((course)=>{
-                $(tmp).find("[data-content="+course[0]+"]").append(`<p class="newContent">  ${course[1]}  </p>`);
-                if(course[1] > 0){
-                    $(tmp).find("[data-content="+course[0]+"]").addClass("new");
-                    $(tmp).find("[data-course="+course[0]+"]").addClass("new");
-                    //$(tmp).find("[data-container="+course[0]+"]").addClass("new");
-                    //$(tmp).find("#"+course[0]).addClass("new");
+                $(tmp).find("[data-content=" + course[0] + "]").append(`<p class="newContent">  ${course[1]}  </p>`);
+                if (course[1] > 0) {
+                    $(tmp).find("[data-content=" + course[0] + "]").addClass("new");
+
+                    let selector = $(tmp).find("[data-content=" + course[0] + "]").closest("div.content-container").attr("data-container");
+                    $(tmp).find("[data-course=" + selector + "]").addClass("new");
                 }
             })
             chrome.storage.local.set({ "updateInfo": 0 });
-            chrome.runtime.sendMessage({act: "removeBadge"});
         }
         
         resolve(tmp);
@@ -257,7 +267,7 @@ let _promiseMakeElements = function (courseMetaData, courseData, updateInfo){
 
                 }
             })
-        } else if (updateResult.updateInfo === 0) {   // 이미 한번 구현된 상태
+        } else if (updateResult.updateInfo == 0) {   // 이미 한번 구현된 상태
             chrome.storage.local.get("content", (contentResult) => {
                 if (contentResult.content !== undefined) {
                     render(contentResult.content);

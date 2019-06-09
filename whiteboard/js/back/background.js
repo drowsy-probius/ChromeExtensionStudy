@@ -1,7 +1,6 @@
 let INTERVAL = 120;
 
 chrome.alarms.onAlarm.addListener(function (alarm) {
-  console.log(1);
   refresh()
     .then(function (msg) {
       // console.log(msg);
@@ -54,8 +53,8 @@ chrome.runtime.onMessage.addListener(
       sendResponse({ farewell: "reloading..." });
     }
 
-    if(request.act === "removeBadge"){
-      SetBadge(0);
+    if(request.removeBadge !== undefined){
+      SetBadge(-1*request.removeBadge);
     }
 
     if(request.user !== undefined){

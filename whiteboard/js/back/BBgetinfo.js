@@ -46,23 +46,31 @@ let _MakePromiseArrayBB = (cids) => {
 
 let _promiseGetCourseAnnouncements = function(responseText){
     return new Promise((resolve, reject) => {
-        let tmp = new DOMParser().parseFromString(responseText, "text/html");
-        let announcementList = tmp.getElementById('announcementList');
+        let announcementList = $("<div></div>").append($.parseHTML(responseText)).find('#announcementList');
         let result = [];
 
         if (announcementList) {
-            for (let i = 0; i < announcementList.children.length; i++) {
-
-                let title = announcementList.children[i].getElementsByClassName('item')[0].innerText; //innerHTML
-                let content = announcementList.children[i].getElementsByClassName('vtbegenerated')[0].innerHTML;
-                let author = announcementList.children[i].getElementsByClassName('announcementInfo')[0].innerText;
-
-                if (title) {
+            announcementList.children('li').each(function(index, item){
+                let title = $(item).find('.item').text();
+                let content = $(item).find('div.details').html();
+                if(title){
                     if(!content) content = "";
-                    if(!author) author = "";
-                    result.push({"order":i, "title":title, "content":content, "author":author});
+                    result.push({"order":index, "title":title, "content":content});
                 }
-            }
+            })
+            // for (let i = 0; i < announcementList.children('li').length; i++) {
+
+            //     let title = $(announcementList.children('li')[i]).find('item').text();
+            //     let content = $(announcementList.children('li')[i]).find('div.details')[0].html();
+            //     //let author = $(announcementList.children('li')[i]).find('div.announcementInfo')[0].innerText;
+
+            //     if (title) {
+            //         if(!content) content = "";
+            //         if(!author) author = "";
+            //         //result.push({"order":i, "title":title, "content":content, "author":author});
+            //         result.push({"order":i, "title":title, "content":content});
+            //     }
+            // }
 
         }
         resolve(result);
@@ -71,20 +79,18 @@ let _promiseGetCourseAnnouncements = function(responseText){
 
 let _promiseGetCourseGrades = function(responseText){
     return new Promise((resolve, reject) => {
-        let tmp = new DOMParser().parseFromString(responseText, "text/html");
-        let grades = tmp.getElementById('grades_wrapper');
+        let grades = $("<div></div>").append($.parseHTML(responseText)).find('#grades_wrapper');
         let result = [];
-
+        //grades=0  // 업데이트 로직 테스트용
         if (grades) {
-            for (let i = 0; i < grades.children.length; i++) {
-                let title = grades.children[i].children[0].innerText;
-                let grade = grades.children[i].children[2].innerText;
-
+            grades.children('div').each(function(index, item){
+                let title = $(item).find('div.cell.gradable').text();
+                let grade = $(item).find('div.cell.grade').text();
                 if (title) {
                     if(!grade) grade = '';
-                    result.push({"order": i, "title": title, "content": grade});
+                    result.push({"order": index, "title": title, "content": grade});
                 }
-            }
+            })
         }
         resolve(result);
     })
@@ -120,20 +126,34 @@ let _MakePromiseArrayBB_CC = function(cid, ids){
 
 let _promiseGetCourseContents = function (id, responseText, CCurl){
     return new Promise((resolve, reject) => {
-        let tmp = new DOMParser().parseFromString(responseText, "text/html");
-        let contents = tmp.getElementById('content_listContainer');
+        let contents = $("<div></div>").append($.parseHTML(responseText)).find('#content_listContainer');
         let result = [];
 
         if (contents) {
-            for (let i = 0; i < contents.children.length; i++) {
-                let title = contents.children[i].getElementsByClassName('item')[0].innerText;
-                //let file = contents.children[i].getElementsByClassName('attachments')[0] ? contents.children[i].getElementsByClassName('attachments')[0].innerText : "";
-                let content = contents.children[i].getElementsByClassName('vtbegenerated')[0] ? contents.children[i].getElementsByClassName('vtbegenerated')[0].innerText : "";
+            contents.children('li').each(function(i,e){
+                let title = $(e).find('div.item').text();
+                let rawfile = $(e).find('ul.attachments');
+                let file = $('<div></div>');
+                let content = $(e).find('div.vtbegenerated').html(); 
+
+                if(rawfile !== undefined){
+                    rawfile.each(function(index, item){
+                        let _file = $(item).children('li').children('a');
+
+                        _file.each(function(index, _item){
+                            let link = "https://kulms.korea.ac.kr" + $(_item).attr('href').replace("chrome-extension://" + /[a-z]+/g, "")
+                            $(_item).attr('href', link);
+                            $(_item).find('img').remove();
+                            file.append(_item);
+                            file.append('<br>')
+                        })
+                    })
+                }              
 
                 if (title) {
-                    result.push({ "order": i, "title": title, "content": content});
+                    result.push({ "order": i, "title": title, "content": content, "file": file.html()});
                 }
-            }
+            })
         }
         resolve([id, result, CCurl]);
     })
@@ -141,19 +161,34 @@ let _promiseGetCourseContents = function (id, responseText, CCurl){
 
 let _promiseGetCourseContents2 = function (responseText){
     return new Promise((resolve, reject) => {
-        let tmp = new DOMParser().parseFromString(responseText, "text/html");
-        let contents = tmp.getElementById('content_listContainer');
+        let contents = $("<div></div>").append($.parseHTML(responseText)).find('#content_listContainer');
         let result = [];
 
         if (contents) {
-            for (let i = 0; i < contents.children.length; i++) {
-                let title = contents.children[i].getElementsByClassName('item')[0].innerText;
-                let content = contents.children[i].getElementsByClassName('vtbegenerated')[0] ? contents.children[i].getElementsByClassName('vtbegenerated')[0].innerText : "";
+            contents.children('li').each(function(i,e){
+                let title = $(e).find('div.item').text();
+                let rawfile = $(e).find('ul.attachments');
+                let file = $('<div></div>');
+                let content = $(e).find('div.vtbegenerated').html(); 
+
+                if(rawfile !== undefined){
+                    rawfile.each(function(index, item){
+                        let _file = $(item).children('li').children('a');
+
+                        _file.each(function(index, _item){
+                            let link = "https://kulms.korea.ac.kr" + $(_item).attr('href').replace("chrome-extension://" + /[a-z]+/g, "")
+                            $(_item).attr('href', link);
+                            $(_item).find('img').remove();
+                            file.append(_item);
+                            file.append('<br>')
+                        })
+                    })
+                }              
 
                 if (title) {
-                    result.push({ "order": i, "title": title, "content": content});
+                    result.push({ "order": i, "title": title, "content": content, "file": file.html()});
                 }
-            }
+            })
         }
         resolve(result);
     })
