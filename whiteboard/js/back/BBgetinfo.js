@@ -52,25 +52,13 @@ let _promiseGetCourseAnnouncements = function(responseText){
         if (announcementList) {
             announcementList.children('li').each(function(index, item){
                 let title = $(item).find('.item').text();
-                let content = $(item).find('div.details').html();
+                let content = $(item).find('div.details');
+                $(content).find("*").removeAttr("style");
                 if(title){
                     if(!content) content = "";
-                    result.push({"order":index, "title":title, "content":content});
+                    result.push({"order":index, "title":title, "content":content.html()});
                 }
             })
-            // for (let i = 0; i < announcementList.children('li').length; i++) {
-
-            //     let title = $(announcementList.children('li')[i]).find('item').text();
-            //     let content = $(announcementList.children('li')[i]).find('div.details')[0].html();
-            //     //let author = $(announcementList.children('li')[i]).find('div.announcementInfo')[0].innerText;
-
-            //     if (title) {
-            //         if(!content) content = "";
-            //         if(!author) author = "";
-            //         //result.push({"order":i, "title":title, "content":content, "author":author});
-            //         result.push({"order":i, "title":title, "content":content});
-            //     }
-            // }
 
         }
         resolve(result);
@@ -124,73 +112,105 @@ let _MakePromiseArrayBB_CC = function(cid, ids){
     return ArrayOfPromise;
 }
 
+let _MakePromiseArrayBB_contents = function(contents, result){
+    let ArrayOfPromise = [];
+    contents.children('li').each((i,e)=>{
+        let PromiseTmp = (
+                            new Promise((resolve, reject)=>{
+                                let rawtitle = $(e).find('div.item');
+                                let title = $('<div></div>')
+                                if ($(rawtitle).find('a').length) {
+                                    let link = "https://kulms.korea.ac.kr" + $(rawtitle).find('a').attr("href").replace("chrome-extension://" + /[a-z]+/g, "")
+                                    $(rawtitle).find('a').attr("href", link);
+                                    let text = $(rawtitle).find('a').text();
+                                    $(rawtitle).find('a').removeAttr("onclick");
+                                    $(rawtitle).find('a').attr("target", "_blank");
+                                    $(rawtitle).find('a').children().remove();
+                                    $(rawtitle).find('a').text(text);
+                                    title.append($(rawtitle).find('a'));
+                                } else {
+                                    title.append($(rawtitle).text());
+                                }
+                                resolve(title);
+                            })
+                            .then((title)=>{
+                                return new Promise((resolve, reject)=>{
+                                    let rawfile = $(e).find('ul.attachments');
+                                    let file = $('<div></div>');
+
+                                    if(rawfile.length){
+                                        rawfile.each(function(index, item){
+                                            let _file = $(item).children('li').children('a');
+                    
+                                            _file.each(function(index, _item){
+                                                let link = "https://kulms.korea.ac.kr" + $(_item).attr('href').replace("chrome-extension://" + /[a-z]+/g, "")
+                                                $(_item).attr('href', link);
+                                                $(_item).find('img').remove();
+                                                file.append(_item);
+                                                file.append('<br>')
+                                            })
+                                        })
+                                    }
+                                    resolve([title, file]);
+                                })
+                            })
+                            .then(([title, file])=>{
+                                return new Promise((resolve, reject)=>{
+                                    let content = $(e).find('div.vtbegenerated');
+                                    if(content.length){
+                                        content.find("*").removeAttr("style");
+                                    }
+                                    resolve([title, file, content]);
+                                })
+                            })
+                            .then(([title, file, content])=>{
+                                if (title) {
+                                    result.push({ "order": i, "title": title.html(), "content": content.html(), "file": file.html() });
+                                }
+                            })
+                        );
+        ArrayOfPromise.push(PromiseTmp);
+    })
+    return ArrayOfPromise;
+}
+
 let _promiseGetCourseContents = function (id, responseText, CCurl){
-    return new Promise((resolve, reject) => {
+    let result = [];
+    return new Promise((resolve, reject)=>{
         let contents = $("<div></div>").append($.parseHTML(responseText)).find('#content_listContainer');
-        let result = [];
-
-        if (contents) {
-            contents.children('li').each(function(i,e){
-                let title = $(e).find('div.item').text();
-                let rawfile = $(e).find('ul.attachments');
-                let file = $('<div></div>');
-                let content = $(e).find('div.vtbegenerated').html(); 
-
-                if(rawfile !== undefined){
-                    rawfile.each(function(index, item){
-                        let _file = $(item).children('li').children('a');
-
-                        _file.each(function(index, _item){
-                            let link = "https://kulms.korea.ac.kr" + $(_item).attr('href').replace("chrome-extension://" + /[a-z]+/g, "")
-                            $(_item).attr('href', link);
-                            $(_item).find('img').remove();
-                            file.append(_item);
-                            file.append('<br>')
-                        })
-                    })
-                }              
-
-                if (title) {
-                    result.push({ "order": i, "title": title, "content": content, "file": file.html()});
-                }
-            })
+        if(contents){
+            resolve(contents);
+        }else{
+            reject("Cannot fetch data");
         }
-        resolve([id, result, CCurl]);
+    })
+    .then(function(contents){
+        return Promise.all(_MakePromiseArrayBB_contents(contents, result));
+    })
+    .then((e)=>{
+        return new Promise((resolve, reject)=>{
+            resolve([id, result, CCurl]);
+        })
     })
 }
 
 let _promiseGetCourseContents2 = function (responseText){
-    return new Promise((resolve, reject) => {
+    let result = [];
+    return new Promise((resolve, reject)=>{
         let contents = $("<div></div>").append($.parseHTML(responseText)).find('#content_listContainer');
-        let result = [];
-
-        if (contents) {
-            contents.children('li').each(function(i,e){
-                let title = $(e).find('div.item').text();
-                let rawfile = $(e).find('ul.attachments');
-                let file = $('<div></div>');
-                let content = $(e).find('div.vtbegenerated').html(); 
-
-                if(rawfile !== undefined){
-                    rawfile.each(function(index, item){
-                        let _file = $(item).children('li').children('a');
-
-                        _file.each(function(index, _item){
-                            let link = "https://kulms.korea.ac.kr" + $(_item).attr('href').replace("chrome-extension://" + /[a-z]+/g, "")
-                            $(_item).attr('href', link);
-                            $(_item).find('img').remove();
-                            file.append(_item);
-                            file.append('<br>')
-                        })
-                    })
-                }              
-
-                if (title) {
-                    result.push({ "order": i, "title": title, "content": content, "file": file.html()});
-                }
-            })
+        if(contents){
+            resolve(contents);
+        }else{
+            reject("Cannot fetch data");
         }
-        resolve(result);
+    })
+    .then(function(contents){
+        return Promise.all(_MakePromiseArrayBB_contents(contents, result));
+    })
+    .then((e)=>{
+        return new Promise((resolve, reject)=>{
+            resolve(result);
+        })
     })
 }
 

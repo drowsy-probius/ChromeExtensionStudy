@@ -23,14 +23,12 @@ body{
   }
 
   .tabs{
-    overflow: ellipsis;
     margin: 0px;
     padding: 0px;
     list-style: none;
   }
   .tabs > .course-link{
     width: 93%;
-    overflow: ellipsis;
     background: none;
     color: #222;
     display: inline-block;
@@ -39,7 +37,6 @@ body{
   }
 
   .tabs > .content-link{
-    overflow: ellipsis;
     background: none;
     color: #222;
     display: inline-block;
@@ -50,7 +47,6 @@ body{
    
   .course-link.current{
     width: 93%;
-    overflow: ellipsis;
     background: #f7f7f7;
     color: #222;
   }
@@ -76,16 +72,12 @@ body{
   }
    
   .content.current{
+    white-space: normal;
     overflow: auto; 
-    white-space: nowrap; 
     width: 90%;
     height: 150px;
     display: inherit;
     background: #c9c9c9;
-  }
-
-  .content.current div{
-    overflow: ellipsis;
   }
 
   div#menu{
@@ -104,10 +96,6 @@ body{
     margin-left: auto;
     margin-right: 10px;
     padding: 5px;
-}
-
-.text{
-  overflow: ellipsis;
 }
 
 .hide{

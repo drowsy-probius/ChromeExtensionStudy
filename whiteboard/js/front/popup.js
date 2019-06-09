@@ -200,12 +200,12 @@ let _promiseMakeElements = function (courseMetaData, courseData, updateInfo){
                 content.attr("id", contentlists[title]);
 
 
-                let p = $('<p class="text"></p>');
                 courseData.forEach(elem => {
                     if (elem.id == contentlists[title]) {
                         elem.contents.forEach(e => {
                             let d = $('<div></div>');
-                            let _title = $('<h3>' + e.title.trim() + '</h3>');
+                            let _title = $('<h3></h3>');
+                            _title.html(e.title);
                             
                             let _content = $('<p></p>');
                             _content.html(e.content);
@@ -217,11 +217,10 @@ let _promiseMakeElements = function (courseMetaData, courseData, updateInfo){
                             d.append(_file);
                             d.append(_content);
                             d.append($('<hr>'));
-                            p.append(d);
+                            content.append(d);
                         })
                     }
                 })
-                content.append(p);
 
                 content_container.children('ul').append(content_link);
                 content_container.append(content);
