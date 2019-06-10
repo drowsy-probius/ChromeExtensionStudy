@@ -2,7 +2,7 @@ let INTERVAL = 120;
 
 chrome.runtime.onInstalled.addListener(function(details){
   if(details.reason != "install"){
-    refresh() // in init.js
+    refresh(1) // in init.js
     .then(function(msg){
       // console.log(msg);
       return new Promise((resolve, reject)=>{
@@ -25,7 +25,7 @@ chrome.runtime.onInstalled.addListener(function(details){
 });
 
 chrome.alarms.onAlarm.addListener(function (alarm) {
-  refresh()
+  refresh(0)
     .then(function (msg) {
       // console.log(msg);
       return new Promise((resolve, reject) => {

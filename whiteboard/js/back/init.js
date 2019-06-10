@@ -60,7 +60,7 @@ function init(stdId, pw){ // 매 학기 시작마다 실행(3월, 8월)
         })
 }
 
-function refresh(){   // 평소에 실행
+function refresh(init){   // 평소에 실행
     let stdId = '', pw = '', userid = '', encrypted = '';
     courseData = [];
 
@@ -80,16 +80,20 @@ function refresh(){   // 평소에 실행
         .then(function(_updateArray){
             return new Promise((resolve, reject)=>{
                 let check = 0;
-                for(let i = 0; i<_updateArray.length; i++){
-                    if(_updateArray[i][1] > 0){
-                        check = 1;
-                        break;
+                if(init){
+                    check = 1;
+                }else{
+                    for(let i = 0; i<_updateArray.length; i++){
+                        if(_updateArray[i][1] > 0){
+                            check = 1;
+                            break;
+                        }
                     }
                 }
+                
                 if(check == 1){
                     chrome.storage.local.set({ "courseData": courseData }, function () {
                         chrome.storage.local.set({ "updateInfo": _updateArray }, function () {
-                            chrome.runtime.sendMessage({ isUpdate: "Yes" });
                             resolve("We have new data");
                         });
                     })

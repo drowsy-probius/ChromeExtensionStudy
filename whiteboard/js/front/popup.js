@@ -11,6 +11,7 @@ $('#login').click(function () {
             $('#pw').val('');
         }
     }else{
+        $('#message').text('정보를 가져오는 중입니다.')
         chrome.runtime.sendMessage({ user: [stdId, pw] }, function (response) {
             //console.log(response.farewell);
         })
@@ -35,6 +36,13 @@ $('#setinterval').click(function(){
         })
     }
 })
+
+$(this).keydown(function(key){
+    if (key.which == 13) {
+        $('#login').click();
+    }
+});
+
 
 chrome.runtime.onMessage.addListener(
     function (request, sender, sendResponse) {

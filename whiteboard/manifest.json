@@ -1,7 +1,7 @@
 {
     "manifest_version": 2,
     "name": "Whiteboard",
-    "version": "1.1.4",
+    "version": "1.1.6",
 
     "description": "auto login, simple content viewer, new content alarm for Blackboard™ in Korea University.",
 
