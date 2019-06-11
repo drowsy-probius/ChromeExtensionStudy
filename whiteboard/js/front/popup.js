@@ -13,14 +13,20 @@ $('#login').click(function () {
     }else{
         $('#message').text('정보를 가져오는 중입니다.')
         chrome.runtime.sendMessage({ user: [stdId, pw] }, function (response) {
-            //console.log(response.farewell);
+            console.log(response.farewell);
         })
     }
 });
 
 $('#reload').click(function () {
     chrome.runtime.sendMessage({ act: "reload" }, function (response) {
-        //console.log(response.farewell);
+        console.log(response.farewell);
+    })
+})
+
+$('#forcereload').click(function(){
+    chrome.runtime.sendMessage({ act: "forcereload"}, function(response){
+        console.log(response.farewell)
     })
 })
 
@@ -63,7 +69,7 @@ chrome.runtime.onMessage.addListener(
         if(request.isUpdate === "Yes"){
             let _courseMetaData = [];
             let _updateInfo = [];
-            return new Promise((resolve, reject) => {
+            new Promise((resolve, reject) => {
                 chrome.storage.local.get("updateInfo", (result)=>{
                     _updateInfo = result.updateInfo;
                     resolve("OK");
@@ -86,12 +92,14 @@ chrome.runtime.onMessage.addListener(
             })
             .catch(console.log.bind(console))
         }
+        sendResponse({ farewell: "OK" });
         return true;
     }
 );
 
 let _promiseSetData = function () {
     let _courseData = [];
+    $('.container > .tabs').html('');
 
     return _promiseGetData()
         .then(function (courseData) {

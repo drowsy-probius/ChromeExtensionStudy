@@ -45,7 +45,6 @@ function init(stdId, pw){ // 매 학기 시작마다 실행(3월, 8월)
                 reject("LoginFailed");
             })
         })
-
         .then(function(cids){   // course content's ids
             //console.log(courseData);
             //console.log(courseMetaData);
@@ -60,11 +59,37 @@ function init(stdId, pw){ // 매 학기 시작마다 실행(3월, 8월)
         })
 }
 
-function refresh(init){   // 평소에 실행
+function refresh(isupdate, isterm){   // 평소에 실행
     let stdId = '', pw = '', userid = '', encrypted = '';
     courseData = [];
+    let month = new Date().getMonth() + 1;  // 0 for JAN
+    let date = new Date().getDate();
+    let day = new Date().getDay(); // 0 for sunday
+    // 보통 3월 9월 둘째주에 정정 끝남.
+    let isNewTerm = ((month == 3 || month == 9) && (date > 7 && date < 14) && day == 0) || isterm;
 
-    return Promise.all([
+    if(isNewTerm){
+        return Promise.all([
+            new Promise((resolve, reject) => { chrome.storage.local.get("stdId", (result) => { stdId = result.stdId; resolve("OK"); }); }),
+            new Promise((resolve, reject) => { chrome.storage.local.get("pw", (result) => { encrypted = result.pw; resolve("OK"); }); }),
+            new Promise((resolve, reject)=>{chrome.storage.local.get("userid", (result)=>{userid=result.userid; resolve("OK");});})
+        ])
+        .then((function(msd){
+            pw = CryptoJS.AES.decrypt(encrypted, stdId+userid).toString(CryptoJS.enc.Utf8);
+            return init(stdId, pw);
+        }))
+        .then(function (e) {
+            return new Promise((resolve, reject) => {
+                chrome.runtime.sendMessage({ isSet: "Yes"}, function(){
+                    chrome.alarms.clearAll()
+                    chrome.alarms.create({ when: Date.now() + 1000, periodInMinutes: INTERVAL * 1 });
+                    chrome.storage.local.set({ "INTERVAL": INTERVAL });
+                    resolve("OK");
+                })
+            })
+          })
+    }else{
+        return Promise.all([
         new Promise((resolve, reject)=>{chrome.storage.local.get("stdId", (result)=>{stdId=result.stdId; resolve("OK");});}),
         new Promise((resolve, reject)=>{chrome.storage.local.get("pw", (result)=>{encrypted=result.pw; resolve("OK");});}),
         new Promise((resolve, reject)=>{chrome.storage.local.get("userid", (result)=>{userid=result.userid; resolve("OK");});}),
@@ -80,7 +105,7 @@ function refresh(init){   // 평소에 실행
         .then(function(_updateArray){
             return new Promise((resolve, reject)=>{
                 let check = 0;
-                if(init){
+                if(isupdate){
                     check = 1;
                 }else{
                     for(let i = 0; i<_updateArray.length; i++){
@@ -102,6 +127,9 @@ function refresh(init){   // 평소에 실행
                 }
             })
         })
+    }
+
+    
 
 }
 

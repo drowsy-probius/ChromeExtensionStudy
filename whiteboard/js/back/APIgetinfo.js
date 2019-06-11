@@ -21,7 +21,7 @@ let _promiseGetCourseIds = function getCourses(responseText){ // 현재 course i
     return new Promise( (resolve, reject) => {
         let cids = [];
         let nowY = new Date().getFullYear();
-        let nowM = new Date().getMonth();
+        let nowM = new Date().getMonth() + 1;
         let term;
         if(nowM < 7) term = 2;
         else term = 8;
