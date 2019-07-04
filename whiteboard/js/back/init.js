@@ -139,6 +139,7 @@ let _promiseLogin = function(stdId, pw){
             url: "https://kulms.korea.ac.kr/",
             type: "GET",
             success: function(data) {
+                console.log(data);
                 let form = $("<div></div>").append($.parseHTML(data)).find('#loginBox2').find('form');
                 if (form.attr("action") !== undefined) {
                     form.find('#user_id').val(stdId);
