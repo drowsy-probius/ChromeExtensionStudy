@@ -74,3 +74,17 @@ $(this).keydown(function (key) {
     }
 });
 
+chrome.runtime.onMessage.addListener(
+    async function (request, sender, sendResponse) {
+        if(request.Error !== undefined){
+            $('#message').text(request.Error);
+        }
+
+        if (request.isSet === "Yes") {
+            $('.container > .tabs').html('');
+            render( await makeElements() );
+        }
+        
+        return true;
+    }
+);

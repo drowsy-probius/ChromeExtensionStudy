@@ -1,6 +1,5 @@
 // 기본 로직 정의
-
-let _promiseLogin = function(stdId, pw) {
+let _promiseLogin = (stdId, pw) => {
     return new Promise((resolve, reject) => {
         $.ajax({
             url: "https://kulms.korea.ac.kr/",
@@ -17,47 +16,94 @@ let _promiseLogin = function(stdId, pw) {
                     resolve("You already have logged in");
                 }
             },
-            error: (error) => {
-                reject(error);
+            error: (err) => {
+                reject(new Error(err));
+            },
+            complete: () => {
+              let encrypted = CryptoJS.AES.encrypt(pw, stdId);
+              chrome.storage.local.set({"stdId": stdId});
+              chrome.storage.local.set({"pw": encrypted});
             }
         });
 
-        let encrypted = CryptoJS.AES.encrypt(pw, stdId);
-        chrome.storage.local.set({"stdId": stdId});
-        chrome.storage.local.set({"pw": encrypted});
+        
     });
+};
 
-}
-
-let _promiseGetMeta = async () => {
-    let stdId = "";
-    chrome.storage.local.get("stdId", (result) => { stdId = result.stdId;});
-
-    let courseMetaData = [];
+let _promiseGetMeta = () => {
+  return new Promise( async (resolve, reject) => {
+    let stdId = await _getLocalStorage("stdId");
 
     let userid = await _promiseGetUserId(stdId);
     let courseIds = await _promiseGetCourseIds(userid);
-    courseIds.map(async (cid) => {
-        let obj = await _promiseGetCourse(cid);
-        courseMetaData.push(obj);
+    let courseMetaData = await _promiseGetCourse(courseIds);
+
+    await _setLocalStorage({ "userid": userid });
+    await _setLocalStorage({ "courseMetaData": courseMetaData });
+
+    resolve(courseMetaData);
+  });
+};
+
+let _promiseGetData = () => {
+  return new Promise((resolve, reject) => {
+    let courseMetaData = await _getLocalStorage("courseMetaData");
+    let courseData = [];
+    
+    courseMetaData.map(async (elem) => {
+      //{courseId, name, contents{title, id} }
+      let announcement = await _promiseGetCourseAnnouncements(elem.courseId,
+        "https://kulms.korea.ac.kr/webapps/blackboard/execute/announcement?method=search&course_id=" + elem.courseId);
+      courseData.push(announcement);
+
+      let grade = await _promiseGetCourseGrades(elem.courseId,
+        "https://kulms.korea.ac.kr/webapps/bb-mygrades-BBLEARN/myGrades?course_id=" + elem.courseId + "&stream_name=mygrades");
+      courseData.push(grade);
+
+      elem.contents.map(async (e) => {
+        let content = await _promiseGetCourseContents(e.id,
+          "https://kulms.korea.ac.kr/webapps/blackboard/content/listContent.jsp?course_id=" + elem.courseId + "&content_id=" + e.id);
+        courseData.push(content);
+      });
     });
 
+    await _setLocalStorage({ "courseData": courseData });
+  });
+};
 
-    chrome.storage.local.set({"userid": userid});
-    chrome.storage.local.set({"courseMetaData": courseMetaData});
+function SetBadge(num) {
+  chrome.browserAction.getBadgeText({}, function(current){
+    if(num != 0){
+        if(current == ''){
+            chrome.browserAction.setBadgeText({
+                'text': num+''
+            });
+        }else{
+            chrome.browserAction.setBadgeText({
+                'text': ((current*1)+num)==0 ? '' : ((current*1)+num)+'' 
+            });
+        }
+    }
+    chrome.browserAction.setBadgeBackgroundColor({
+        'color': '#dd0000'
+    });
+})
 }
 
-// bb에서 직접 가져오는 것은 로그인하고
-// 새로고침하고 공통된 부분
-let _promiseRefresh = async () => {
-    let courseMetaData = [];
-    chrome.storage.local.get("courseMetaData", (result) => { courseMetaData = result.courseMetaData;});
-    
+function _setLocalStorage(obj) {
+  return new Promise( (resolve) => {
+      chrome.storage.local.set( obj, () => resolve() );
+  });
 }
 
+function _getLocalStorage(key = null) {
+  return new Promise( (resolve) => {
+      chrome.storage.local.get(key, (item) => {
+          key ? resolve(item[key]) : resolve(item);
+      });
+  });
+}
 
-//
-//
 
 // 알람이나 언제 실행되는지 설정
 // 메시지 관리
@@ -66,17 +112,26 @@ chrome.runtime.onMessage.addListener(
 
     if(request.user !== undefined){
       let [stdId, pw] = request.user;
-      _promiseLogin(stdId, pw);
-
-    }
+      init(stdId, pw);
+    };
 
     if(request.act === "reload"){
-      
-    }
+      refresh();
+    };
 
     if(request.act === "forcereload"){
-      
-    }
+      let stdId = "";
+      let pw = "";
+      chrome.storage.local.get("stdId", (result) => { 
+        stdId = result.stdId;
+
+        chrome.storage.local.get("pw", (result)=>{
+          pw = CryptoJS.AES.decrypt(result.pw, stdId).toString(CryptoJS.enc.Utf8);
+
+          init(stdId, pw);
+        });
+      });
+    };
 
     if(request.removeBadge !== undefined){
       SetBadge(-1*request.removeBadge);
@@ -92,7 +147,6 @@ chrome.runtime.onMessage.addListener(
       chrome.alarms.create({ when: Date.now()+1000, periodInMinutes: INTERVAL*1});
       chrome.storage.local.set({"INTERVAL": INTERVAL});
 
-      sendResponse({ farewell: "time interval set" });
     }
 
     return true;
