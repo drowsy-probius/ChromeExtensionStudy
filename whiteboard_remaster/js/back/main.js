@@ -1,12 +1,13 @@
-let init = async (stdId, pw) => {
-    await _promiseLogin(stdId, pw);
+let init = async () => {
+    await _promiseLogin();
     await _promiseGetMeta();
     await _promiseGetData();
-    await chrome.runtime.sendMessage({isSet: "Yes"});
+    await _sendMessage({isSet: "Yes"});
 };
 
 let refresh = async () => {
-    let UpdateInfo = await _promiseUpdateCourseData();
+    let [UpdateInfo, newData] = await _promiseUpdateCourseData();
+
     if(UpdateInfo.length)
     {   // 새로운 데이터가 있음
         let BADGE = 0;
@@ -14,7 +15,8 @@ let refresh = async () => {
             BADGE += elem[1];
         });
         SetBadge(BADGE);
-        chrome.runtime.sendMessage({isSet: "Yes"});
+        await _setLocalStorage({"courseData":newData});
+        await _sendMessage({isSet: "Yes"});
     }
 };
 

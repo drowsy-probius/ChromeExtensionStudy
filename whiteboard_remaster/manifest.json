@@ -6,7 +6,7 @@
     "description": "auto login, simple content viewer, new content alarm for Blackboard™ in Korea University.",
 
     "background": {
-        "scripts": ["js/cryptoAES.js", "js/jquery-3.4.1.min.js", "js/back/getMeta.js", "js/back/getData.js", "js/back/main.js", "js/back/background.js"],
+        "scripts": ["js/cryptoAES.js", "js/jquery-3.4.1.min.js", "js/back/getMeta.js", "js/back/getData.js", "js/back/background.js", "js/back/main.js"],
         "persistent": false
     },
 

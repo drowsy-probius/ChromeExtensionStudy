@@ -1,5 +1,5 @@
 // 로그인
-$('#login').click(() => {
+$('#login').click( () => {
     let stdId = $('#stdId').val();
     let pw = $('#pw').val();
     stdId = stdId.replace(/\s/gi, "");
@@ -59,6 +59,7 @@ $('#setinterval').click(function(){
         $('#interval').attr("placeholder", "숫자만 입력해 주세요. (현재 간격: "+period+"분)");
     }else
     {
+        msgport.postMessage({ interval: period });
         chrome.runtime.sendMessage({ interval: period })
         $('#interval').val('');
         $('#interval').attr("placeholder", "새로고침 간격(현재: " + period + "분)");
@@ -74,17 +75,29 @@ $(this).keydown(function (key) {
     }
 });
 
-chrome.runtime.onMessage.addListener(
-    async function (request, sender, sendResponse) {
-        if(request.Error !== undefined){
-            $('#message').text(request.Error);
-        }
-
-        if (request.isSet === "Yes") {
-            $('.container > .tabs').html('');
-            render( await makeElements() );
-        }
-        
-        return true;
+let msgport = chrome.runtime.connect();
+msgport.onMessage.addListener( async (msg) => {
+    if(msg.Error !== undefined){
+        $('#message').text(msg.Error);
     }
-);
+
+    if (msg.isSet === "Yes") {
+        $('.container > .tabs').html('');
+        render( await makeElements() );
+    }
+})
+
+// chrome.runtime.onMessage.addListener(
+//     async function (request, sender, sendResponse) {
+//         if(request.Error !== undefined){
+//             $('#message').text(request.Error);
+//         }
+
+//         if (request.isSet === "Yes") {
+//             $('.container > .tabs').html('');
+//             render( await makeElements() );
+//         }
+        
+//         return true;
+//     }
+// );

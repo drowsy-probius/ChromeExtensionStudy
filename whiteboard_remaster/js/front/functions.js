@@ -1,11 +1,17 @@
 (async () => {
-    chrome.storage.local.get("content", async (result) => {
-        if(result.content){
-            render(result.content); 
-        }else{
+    let content = await _getLocalStorage("content");
+
+    if(content){
+        render(content); 
+    }else{
+        let courseMeta = await _getLocalStorage("courseMetaData");
+        let courseData = await _getLocalStorage("courseData");
+        if(courseMeta && courseData){
             render(await makeElements());
+        }else{
+
         }
-    })
+    }
    
     chrome.storage.local.get("INTERVAL", (result) => {
         if(result.INTERVAL === undefined){
@@ -69,13 +75,12 @@ function render(_content){
 };
 
 function makeElements(){
-    return new Promise((resolve, reject) => {
-        let courseMeta, courseData, updateInfo;
-        chrome.storage.local.get("courseMetaData", (result) => { courseMeta = result.courseMetaData; });
-        chrome.storage.local.get("courseData", (result) => { courseData = result.courseData; });
-        chrome.storage.local.get("updateInfo", (result) => { updateInfo = result.updateInfo; });
+    return new Promise( async (resolve, reject) => {
+        let courseMeta = await _getLocalStorage("courseMetaData");
+        let courseData = await _getLocalStorage("courseData");
+        let updateInfo = await _getLocalStorage("updateInfo");
 
-        let tmp = $('<div><hr></div>');
+        let tmp = $('<div></div>');
 
         courseMeta.forEach(course => {
             let course_link = $('<li></li>');
@@ -136,9 +141,7 @@ function makeElements(){
             course_link.after(content_container);
             content_container.after('<hr>');
         })
-        if(updateInfo === null){
-            $(tmp).find(".content-link").append(`<p class="newContent">  0  </p>`);
-        }else{
+        if(updateInfo){
             updateInfo.forEach( (course)=>{
                 $(tmp).find("[data-content=" + course[0] + "]").append(`<p class="newContent">  ${course[1]}  </p>`);
                 if (course[1] > 0) {
@@ -149,8 +152,24 @@ function makeElements(){
                 }
             })
             chrome.storage.local.set({ "updateInfo": 0 });
+        }else{
+            $(tmp).find(".content-link").append(`<p class="newContent">  0  </p>`);
         }
         
         resolve(tmp);
     });
 };
+
+function _setLocalStorage(obj) {
+    return new Promise((resolve) => {
+        chrome.storage.local.set(obj, () => resolve());
+    });
+}
+
+function _getLocalStorage(key = null) {
+    return new Promise((resolve) => {
+        chrome.storage.local.get(key, (item) => {
+            key ? resolve(item[key]) : resolve(item);
+        });
+    });
+}
