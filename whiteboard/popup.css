@@ -1,11 +1,12 @@
 body{
-  width: 450px;
-  height: 350px;
+  width: 434px;
+  height: 334px;
     margin-top: 10px;
     line-height: 1.3
   }
-  .container{
-    margin: 0 auto;
+
+  #back > div > div {
+    margin-bottom: 20px;
   }
 
   li > .newContent{
@@ -27,7 +28,7 @@ body{
     padding: 0px;
     list-style: none;
   }
-  .tabs > .course-link{
+  .course-link{
     width: 93%;
     background: none;
     color: #222;
@@ -36,11 +37,11 @@ body{
     cursor: pointer;
   }
 
-  .tabs > .content-link{
+  .content-link{
     background: none;
     color: #222;
     display: inline-block;
-    padding: 12.21px;
+    padding: 2%;
     cursor: pointer;
     line-height: 1px;
   }
@@ -80,23 +81,9 @@ body{
     background: #c9c9c9;
   }
 
-  div#menu{
-    width: 100%;
-    height: 40px;
+  div{
     padding: 2px;
   }
-
-#submit{
-    margin-left: 10px;
-    margin-right: auto;
-    padding: 5px;
-}
-
-#refresh{
-    margin-left: auto;
-    margin-right: 10px;
-    padding: 5px;
-}
 
 .hide{
   display: none;
