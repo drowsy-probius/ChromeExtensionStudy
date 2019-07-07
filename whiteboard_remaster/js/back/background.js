@@ -116,7 +116,8 @@ function _getLocalStorage(key = null) {
 
 function _sendMessage(obj) {
     return new Promise((resolve) => {
-        chrome.runtime.sendMessage(obj, () => resolve() );
+        let msgport = chrome.runtime.connect();
+        msgport.postMessage(obj, () => resolve() );
     });
 };
 
@@ -135,83 +136,41 @@ function _postURL(url, obj = null) {
 
 // 알람이나 언제 실행되는지 설정
 // 메시지 관리
-
-var port = chrome.runtime.connect({name: "knockknock"});
-port.postMessage({joke: "Knock knock"});
-port.onMessage.addListener(function(msg) {
-  if (msg.question == "Who's there?")
-    port.postMessage({answer: "Madame"});
-  else if (msg.question == "Madame who?")
-    port.postMessage({answer: "Madame... Bovary"});
-});
-
-
-let msgport = chrome.runtime.connect();
-msgport.onMessage.addListener( async (msg) => {
-    if (msg.user !== undefined) {
-        let [stdId, pw] = msg.user;
-
-        await _setLocalStorage({"stdId": stdId});
-        let encrypted = CryptoJS.AES.encrypt(pw, stdId);
-        await _setLocalStorage({"pw": encrypted});
-
-        init();
-    }else if (msg.act === "reload") {
-        refresh();
-    }else if (msg.act === "forcereload") {
-        init();
-    }else if (msg.removeBadge !== undefined) {
-        SetBadge(-1 * msg.removeBadge);
-    }else if (msg.interval !== undefined) {
-        if (msg.interval * 1 < 1) {
-            INTERVAL = 1;
-        } else {
-            INTERVAL = msg.interval;
+chrome.runtime.onConnect.addListener( (msgport) => {
+    msgport.onMessage.addListener( async (msg) => {
+        if (msg.user !== undefined) {
+    
+            let [stdId, pw] = msg.user;
+    
+            await _setLocalStorage({"stdId": stdId});
+            let encrypted = CryptoJS.AES.encrypt(pw, stdId);
+            await _setLocalStorage({"pw": encrypted});
+    
+            init();
+    
+        }else if (msg.act === "reload") {
+    
+            refresh();
+    
+        }else if (msg.act === "forcereload") {
+    
+            init();
+    
+        }else if (msg.removeBadge !== undefined) {
+    
+            SetBadge(-1 * msg.removeBadge);
+    
+        }else if (msg.interval !== undefined) {
+    
+            if (msg.interval * 1 < 1) {
+                INTERVAL = 1;
+            } else {
+                INTERVAL = msg.interval;
+            }
+            chrome.alarms.clearAll()
+            chrome.alarms.create({ when: Date.now() + 1000, periodInMinutes: INTERVAL * 1 });
+            await _setLocalStorage({ "INTERVAL": INTERVAL });
+    
         }
-        chrome.alarms.clearAll()
-        chrome.alarms.create({ when: Date.now() + 1000, periodInMinutes: INTERVAL * 1 });
-        await _setLocalStorage({ "INTERVAL": INTERVAL });
-    }
+    });
 })
-
-
-// chrome.runtime.onMessage.addListener(
-//     async (request) => {
-
-//         if (request.user !== undefined) {
-//             let [stdId, pw] = request.user;
-
-//             await _setLocalStorage({"stdId": stdId});
-//             let encrypted = CryptoJS.AES.encrypt(pw, stdId);
-//             await _setLocalStorage({"pw": encrypted});
-
-//             init();
-//         };
-
-//         if (request.act === "reload") {
-//             refresh();
-//         };
-
-//         if (request.act === "forcereload") {
-//             init();
-//         };
-
-//         if (request.removeBadge !== undefined) {
-//             SetBadge(-1 * request.removeBadge);
-//         }
-
-//         if (request.interval !== undefined) {
-//             if (request.interval * 1 < 1) {
-//                 INTERVAL = 1;
-//             } else {
-//                 INTERVAL = request.interval;
-//             }
-//             chrome.alarms.clearAll()
-//             chrome.alarms.create({ when: Date.now() + 1000, periodInMinutes: INTERVAL * 1 });
-//             chrome.storage.local.set({ "INTERVAL": INTERVAL });
-
-//         }
-
-//         return true;
-//     }
-// );

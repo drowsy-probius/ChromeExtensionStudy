@@ -8,19 +8,16 @@
         let courseData = await _getLocalStorage("courseData");
         if(courseMeta && courseData){
             render(await makeElements());
-        }else{
-
         }
     }
-   
-    chrome.storage.local.get("INTERVAL", (result) => {
-        if(result.INTERVAL === undefined){
-            $('#interval').attr("placeholder", "새로고침 간격(현재: 120분)");
-        }else{
-            $('#interval').attr("placeholder", "새로고침 간격(현재: "+result.INTERVAL+"분)");
-        }
-        
-    });
+
+    let interval = await _getLocalStorage("INTERVAL");
+    if(interval === undefined){
+        $('#interval').attr("placeholder", "새로고침 간격(현재: 120분)");
+    }else{
+        $('#interval').attr("placeholder", "새로고침 간격(현재: "+interval+"분)");
+    }
+
 })();
 
 function render(_content){
@@ -45,7 +42,7 @@ function render(_content){
             $("[data-container=" + tab_id + "]").addClass('current');
         }
 
-        chrome.storage.local.set({ "content": $('.container > .tabs').html() });
+        _setLocalStorage({ "content": $('.container > .tabs').html() });
     })
 
     $('.content-link').click(function () {
@@ -67,11 +64,12 @@ function render(_content){
             $(this).addClass('current');
             $("#" + content_id).addClass('current');
         }
-        chrome.storage.local.set({ "content": $('.container > .tabs').html() });
-        chrome.runtime.sendMessage({ removeBadge: count*1 });
+
+        _setLocalStorage({ "content": $('.container > .tabs').html() });
+        _sendMessage({ "removeBadge": count*1 });
     })
 
-    chrome.storage.local.set({ "content": $('.container > .tabs').html() });
+    _setLocalStorage({ "content": $('.container > .tabs').html() });
 };
 
 function makeElements(){
@@ -140,7 +138,8 @@ function makeElements(){
             tmp.append(course_link);
             course_link.after(content_container);
             content_container.after('<hr>');
-        })
+        });
+
         if(updateInfo){
             updateInfo.forEach( (course)=>{
                 $(tmp).find("[data-content=" + course[0] + "]").append(`<p class="newContent">  ${course[1]}  </p>`);
@@ -151,12 +150,12 @@ function makeElements(){
                     $(tmp).find("[data-course=" + selector + "]").addClass("new");
                 }
             })
-            chrome.storage.local.set({ "updateInfo": 0 });
+            _setLocalStorage({ "updateInfo": 0 });
         }else{
             $(tmp).find(".content-link").append(`<p class="newContent">  0  </p>`);
         }
         
-        resolve(tmp);
+        resolve(tmp.html());
     });
 };
 
@@ -164,7 +163,7 @@ function _setLocalStorage(obj) {
     return new Promise((resolve) => {
         chrome.storage.local.set(obj, () => resolve());
     });
-}
+};
 
 function _getLocalStorage(key = null) {
     return new Promise((resolve) => {
@@ -172,4 +171,20 @@ function _getLocalStorage(key = null) {
             key ? resolve(item[key]) : resolve(item);
         });
     });
-}
+};
+
+function _sendMessage(obj) {
+    let msgport = chrome.runtime.connect();
+    msgport.postMessage(obj);
+};
+
+chrome.runtime.onConnect.addListener( (msgport) => {
+    msgport.onMessage.addListener( async (msg) => {
+        if(msg.Error !== undefined){
+            $('#message').text(msg.Error);
+        }else if (msg.isSet === "Yes") {
+            $('.container > .tabs').html('');
+            render( await makeElements() );
+        }
+    });
+});

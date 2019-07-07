@@ -17,12 +17,12 @@ $('#login').click( () => {
     }else
     {
         $('#message').text('정보를 가져오는 중입니다.')
-        chrome.runtime.sendMessage({ user: [stdId, pw] });
+        _sendMessage({ user: [stdId, pw] });
     }
 });
 
 // 메인 탭하고 설정 탭 전환
-$('#setting').click(() => {
+$('#setting').click( () => {
     if( $('#main').attr('class').search("current") !== -1 ) //현재 main page가 보이는 상태
     {
         $('#main').removeClass('current');
@@ -41,17 +41,17 @@ $('#setting').click(() => {
 });
 
 // 새로고침
-$('#reload').click(function () {
-    chrome.runtime.sendMessage({ act: "reload" })
+$('#reload').click( () => {
+    _sendMessage({ act: "reload" });
 })
 
 // 강제 새로고침
-$('#forcereload').click(function(){
-    chrome.runtime.sendMessage({ act: "forcereload"})
+$('#forcereload').click( () => {
+    _sendMessage({ act: "forcereload"});
 })
 
 // 자동 새로고침 간격 설정
-$('#setinterval').click(function(){
+$('#setinterval').click( () => {
     let period = $('#interval').val();
     if( isNaN(period) )
     {
@@ -59,8 +59,7 @@ $('#setinterval').click(function(){
         $('#interval').attr("placeholder", "숫자만 입력해 주세요. (현재 간격: "+period+"분)");
     }else
     {
-        msgport.postMessage({ interval: period });
-        chrome.runtime.sendMessage({ interval: period })
+        _sendMessage({ interval: period });
         $('#interval').val('');
         $('#interval').attr("placeholder", "새로고침 간격(현재: " + period + "분)");
 
@@ -68,36 +67,9 @@ $('#setinterval').click(function(){
 })
 
 // 로그인 할 때, 엔터키로 로그인
-$(this).keydown(function (key) {
+$(this).keydown( (key) => {
     if (key.which == 13 && $('#loginform').attr('class').search('hide') === -1) 
     {
         $('#login').click();
     }
 });
-
-let msgport = chrome.runtime.connect();
-msgport.onMessage.addListener( async (msg) => {
-    if(msg.Error !== undefined){
-        $('#message').text(msg.Error);
-    }
-
-    if (msg.isSet === "Yes") {
-        $('.container > .tabs').html('');
-        render( await makeElements() );
-    }
-})
-
-// chrome.runtime.onMessage.addListener(
-//     async function (request, sender, sendResponse) {
-//         if(request.Error !== undefined){
-//             $('#message').text(request.Error);
-//         }
-
-//         if (request.isSet === "Yes") {
-//             $('.container > .tabs').html('');
-//             render( await makeElements() );
-//         }
-        
-//         return true;
-//     }
-// );
