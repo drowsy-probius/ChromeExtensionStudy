@@ -181,10 +181,16 @@ function _sendMessage(obj) {
 chrome.runtime.onConnect.addListener( (msgport) => {
     msgport.onMessage.addListener( async (msg) => {
         if(msg.Error !== undefined){
+
             $('#message').text(msg.Error);
-        }else if (msg.isSet === "Yes") {
+
+        }
+        
+        if (msg.isSet === "Yes") {
+
             $('.container > .tabs').html('');
             render( await makeElements() );
+
         }
     });
 });

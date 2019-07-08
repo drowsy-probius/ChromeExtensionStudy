@@ -1,15 +1,10 @@
 // _promiseGetMeta
 
 let _promiseGetUserId = (stdId) => {
-    return new Promise(async (resolve, reject) => {
-
+    return new Promise(async (resolve) => {
         let myid = await _getURL("https://kulms.korea.ac.kr/learn/api/public/v1/users?userName="+stdId);
-        if(myid.results.length === 1){
-            let userid = myid.results[0].id;
-            resolve(userid);
-        } else{
-            reject(new Error("Student number is wrong!"))
-        }
+        let userid = myid.results[0].id;
+        resolve(userid);
     });
 };
 
@@ -21,26 +16,62 @@ let _promiseGetCourseIds = (userid) => {
         let cids = [];
         let nowY = new Date().getFullYear();
         let nowM = new Date().getMonth() + 1;
+        let week = Math.ceil( new Date().getDate() / 7);
+        let createdM = [2, 6, 8, 12];   // 1학기, 여름, 2학기, 겨울
         let term;
-        // if(nowM < 7) term = 2;
-        // else term = 8;
-        term = 2;
 
-        let tmp = mycourse.results;
-        tmp.forEach(e => {
-            let time = e.created.split('-');
-            let YYYY = time[0] * 1;
-            let MM = time[1] * 1;
-            let avail = e.availability.available;
-
-            // user에게 등록된 course중에서 현재 연도, 현재 학기에 속한 것만 선택함.
-            if (avail == "Yes" && YYYY == nowY && MM >= term) {
-                cids.push(e.courseId);
+        if(nowM < 2){
+            term = 3;
+        }else if(nowM < 6){
+            term = 0;
+        }else if(nowM < 7){
+            if(week < 4){
+                term = 0;
+            }else{
+                term = 1;
             }
-        });
+        }else if(nowM < 8){
+            term = 1;
+        }else if(nowM < 12){
+            term = 2;
+        }else if(nowM < 13){
+            if(week < 4){
+                term = 2;
+            }else{
+                term = 3;
+            }
+        }
 
-        if (!cids) reject(new Error("No courses!"));
-        resolve(cids);
+        //term = 0;    // 테스트용 (1학기)
+
+        do{
+            mycourse.results.forEach(e => {
+                let time = e.created.split('T')[0].split('-');
+                // YYYY-MM-DDTHH:MM:SS.XXXA
+    
+                let YYYY = time[0] * 1;
+                let MM = time[1] * 1;
+                let avail = e.availability.available;
+    
+                if (avail == "Yes"){
+                    if(term == 3){  // 겨울
+                        if(nowM < 2){
+                            if(YYYY == nowY-1 && (MM == createdM[term] || MM < createdM[0]))
+                                cids.push(e.courseId);
+                        }else{
+                            if(YYYY == nowY && MM == createdM[term])
+                                cids.push(e.courseId);
+                        }
+                    }else{
+                        if(YYYY == nowY && MM >= createdM[term])
+                            cids.push(e.courseId);
+                    }
+                }
+            });
+        }while(  (mycourse = await _getURL("https://kulms.korea.ac.kr" + mycourse.paging.nextPage)).results.length > 0 )
+
+        if ( cids.length == 0 ) reject(new Error(EMPTY));
+        else resolve(cids);
     });
 };
 

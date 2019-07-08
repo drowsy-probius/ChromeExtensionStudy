@@ -132,9 +132,7 @@ let _promiseUpdateCourseData = () => {
                     resolve(elem);
                 }
             })
-
-        })
-        )
+        }))
 
         resolve([UpdateInfo, newData]);
     });

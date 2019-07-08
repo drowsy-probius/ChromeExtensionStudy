@@ -1,6 +1,10 @@
-// 기본 로직 정의
-let _promiseLogin = (stdId, pw) => {
-    return new Promise(async (resolve) => {
+const WRONGINFO = "잘못된 학번/비밀번호입니다.";
+const PASS = "이미 로그인된 상태입니다.";
+const EMPTY = "이번 학기는 수업이 없습니다.";
+
+
+let _promiseLogin = () => {
+    return new Promise( async (resolve, reject) => {
         let step1 = await _getURL("https://kulms.korea.ac.kr/");
         let form = $("<output>").append($.parseHTML(step1)).find('#loginBox2').find('form');
 
@@ -11,32 +15,45 @@ let _promiseLogin = (stdId, pw) => {
 
             form.find('#user_id').val(stdId);
             form.find('#password').val(pw);
-            let step2 = await _postURL("https://kulms.korea.ac.kr/" + form.attr("action"), form.serialize());
+            resolve(await _postURL("https://kulms.korea.ac.kr" + form.attr("action"), form.serialize()));
+        } else {
+            reject(new Error(PASS));
+        }
+    })
+    .then( (step2) => {
+        return new Promise( async (resolve, reject) => {
             let check = $("<output>").append($.parseHTML(step2)).find('title').text();
-            
             if(check.search("마이페이지") !== -1){
                 resolve(step2);
             }else{
-
                 await _setLocalStorage({"stdId": null});
                 await _setLocalStorage({"pw": null});
-                reject(new Error("Wrong user information."));
+                reject(new Error(WRONGINFO));
             }
-        } else {
-            resolve("You already have logged in");
-        }
+        })
+    });
+};
+
+let _promiseLogout = () => {
+    return new Promise(async (resolve) => {
+        let result = await _getURL("https://kulms.korea.ac.kr/webapps/login/?action=logout");
+        resolve(result);
     });
 };
 
 let _promiseGetMeta = () => {
     return new Promise(async (resolve) => {
-        let userid = await _promiseGetUserId( await _getLocalStorage("stdId") );
-        let courseMetaData = await _promiseGetCourse( await _promiseGetCourseIds(userid) );
+        try{
+            let userid = await _promiseGetUserId( await _getLocalStorage("stdId") );
+            let courseMetaData = await _promiseGetCourse( await _promiseGetCourseIds(userid) );
 
-        await _setLocalStorage({ "userid": userid });
-        await _setLocalStorage({ "courseMetaData": courseMetaData });
+            await _setLocalStorage({ "userid": userid });
+            await _setLocalStorage({ "courseMetaData": courseMetaData });
 
-        resolve(courseMetaData);
+            resolve(courseMetaData);
+        }catch(e){
+            await _sendMessage({Error: e.message});
+        }
     });
 };
 
@@ -74,32 +91,6 @@ let _promiseGetData = () => {
     });
 };
 
-let _promiseLogout = () => {
-    return new Promise(async (resolve) => {
-        let result = await _getURL("https://kulms.korea.ac.kr/webapps/login/?action=logout");
-        resolve(result);
-    })
-}
-
-function SetBadge(newValue) {
-    chrome.browserAction.getBadgeText({}, (curValue) => {
-        if (newValue != 0) {
-            if (curValue == '') {
-                chrome.browserAction.setBadgeText({
-                    'text': newValue + ''
-                });
-            } else {
-                chrome.browserAction.setBadgeText({
-                    'text': ((curValue * 1) + newValue) == 0 ? '' : ((curValue * 1) + newValue) + ''
-                });
-            }
-        }
-        chrome.browserAction.setBadgeBackgroundColor({
-            'color': '#dd0000'
-        });
-    })
-}
-
 function _setLocalStorage(obj) {
     return new Promise((resolve) => {
         chrome.storage.local.set(obj, () => resolve());
@@ -133,9 +124,25 @@ function _postURL(url, obj = null) {
     })
 }
 
+function SetBadge(newValue) {
+    chrome.browserAction.getBadgeText({}, (curValue) => {
+        if (newValue != 0) {
+            if (curValue == '') {
+                chrome.browserAction.setBadgeText({
+                    'text': newValue + ''
+                });
+            } else {
+                chrome.browserAction.setBadgeText({
+                    'text': ((curValue * 1) + newValue) == 0 ? '' : ((curValue * 1) + newValue) + ''
+                });
+            }
+        }
+        chrome.browserAction.setBadgeBackgroundColor({
+            'color': '#dd0000'
+        });
+    })
+}
 
-// 알람이나 언제 실행되는지 설정
-// 메시지 관리
 chrome.runtime.onConnect.addListener( (msgport) => {
     msgport.onMessage.addListener( async (msg) => {
         if (msg.user !== undefined) {
@@ -156,6 +163,10 @@ chrome.runtime.onConnect.addListener( (msgport) => {
     
             init();
     
+        }else if(msg.act === "logout") {
+            
+            logout();
+
         }else if (msg.removeBadge !== undefined) {
     
             SetBadge(-1 * msg.removeBadge);
@@ -167,7 +178,7 @@ chrome.runtime.onConnect.addListener( (msgport) => {
             } else {
                 INTERVAL = msg.interval;
             }
-            chrome.alarms.clearAll()
+            chrome.alarms.clearAll();
             chrome.alarms.create({ when: Date.now() + 1000, periodInMinutes: INTERVAL * 1 });
             await _setLocalStorage({ "INTERVAL": INTERVAL });
     
